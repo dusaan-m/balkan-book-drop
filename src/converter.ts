@@ -3,8 +3,14 @@ import { spawn } from 'child_process';
 import { basename, dirname, extname, join } from 'path';
 import { logger } from './logger.js';
 import { readZipEntries } from './utils.js';
+import {
+  CONVERTER_TIMEOUT_MS,
+  KINDLEGEN_TIMEOUT_MS,
+  KINDLING_MEMORY_LIMIT_BYTES,
+  KINDLING_MAX_UNPACKED_BYTES,
+} from './config.js';
 
-const KINDLEGEN_TIMEOUT_MS = 100_000;
+export { KINDLING_MAX_UNPACKED_BYTES };
 
 async function deleteFile(filePath: string): Promise<void> {
   try {
@@ -31,7 +37,7 @@ function spawnProcess(
   cwd: string,
   {
     isSuccess = (code: number | null) => code === 0,
-    timeoutMs = 55_000,
+    timeoutMs = CONVERTER_TIMEOUT_MS,
     memoryLimitBytes,
   }: {
     isSuccess?: (code: number | null) => boolean;
@@ -152,11 +158,6 @@ export async function convertWithKindlegen(inputPath: string): Promise<string> {
 }
 
 export const KINDLING_WORK_DIR_PREFIX = '.kindling-';
-
-// A real book needs at most about 220 MB; the cap makes a hostile one fail in seconds.
-const KINDLING_MEMORY_LIMIT_BYTES = 384 * 1024 * 1024;
-// kindling unpacks the whole book to disk and won't write past the sizes the zip declares.
-export const KINDLING_MAX_UNPACKED_BYTES = 256 * 1024 * 1024;
 
 /** Sums the uncompressed sizes the zip's central directory declares. */
 async function declaredUnpackedSize(zipPath: string): Promise<number> {

@@ -25,6 +25,8 @@ import {
   MAX_DISK_BYTES,
   MAX_FILES_PER_KEY,
   MAX_URLS_PER_KEY,
+  MAX_KINDLE_ENTRIES,
+  MAX_CONVERT_UNCOMPRESSED_BYTES,
   UPLOAD_DIR,
   UPLOAD_RATE_LIMIT_MAX,
 } from '../config.js';
@@ -126,10 +128,6 @@ function epubConverter(
   }
   return null;
 }
-
-// kepubify v5 streams the book, so only kindling needs a cap on the number of entries.
-const MAX_KINDLE_ENTRIES = 10_000;
-const MAX_CONVERT_UNCOMPRESSED_BYTES = 512 * 1024 * 1024;
 
 async function fitsConversionLimits(
   filePath: string,

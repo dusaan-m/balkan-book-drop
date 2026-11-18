@@ -7,7 +7,9 @@ import JSZip from 'jszip';
 import { transliterate } from 'transliteration';
 import { logger } from './logger.js';
 import type { MetadataDiff } from './types.js';
-import { GOOGLE_BOOKS_API_KEY } from './config.js';
+import { GOOGLE_BOOKS_API_KEY, MAX_ZIP_INDEX_BYTES } from './config.js';
+
+export { MAX_ZIP_INDEX_BYTES };
 
 export const KEY_REGEX = /^[23456789ACDEFGHJKLMNPRSTUVWXYZ]{4}$/;
 
@@ -58,9 +60,6 @@ const ZIP_DIR_HEADER_SIZE = 46;
 /** Value of a size, offset or count field whose real value is in a ZIP64 record. */
 const ZIP64_U16 = 0xffff;
 const ZIP64_U32 = 0xffffffff;
-// About 400 bytes for each of the 10,000 entries a Kindle conversion allows; a real EPUB's
-// index needs about 120 per entry.
-export const MAX_ZIP_INDEX_BYTES = 4 * 1024 * 1024;
 
 export async function hasZipEndRecord(filePath: string): Promise<boolean> {
   const handle = await fsp.open(filePath, 'r');

@@ -63,24 +63,40 @@ Uses Node.js's built-in test runner (`node:test`) — no extra test framework ne
 
 Copy `.env.example` to `.env` to customise these values.
 
-| Variable                     | Default      | Description                                                                                                                           |
-| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `DISABLE_HSTS`               | _(unset)_    | Set to `1` to disable HSTS and `upgrade-insecure-requests`. Use only when serving plain HTTP without a TLS-terminating reverse proxy. |
-| `PORT`                       | `3001`       | HTTP port the server listens on                                                                                                       |
-| `UPLOAD_DIR`                 | `uploads`    | Directory for temporary file storage                                                                                                  |
-| `EXPIRE_DELAY_MS`            | `300000`     | Inactivity timeout per key (ms)                                                                                                       |
-| `MAX_EXPIRE_MS`              | `3600000`    | Hard maximum key lifetime (ms)                                                                                                        |
-| `MAX_FILE_SIZE`              | `838860800`  | Upload size limit in bytes (800 MB)                                                                                                   |
-| `MAX_DISK_BYTES`             | `1073741824` | Total upload directory size cap in bytes (1 GB); uploads returning 507 when exceeded                                                  |
-| `MAX_FILES_PER_KEY`          | `5`          | Max files staged per session key; further uploads return 400                                                                          |
-| `MAX_URLS_PER_KEY`           | `20`         | Max URLs staged per session key; further submissions return 400                                                                       |
-| `MAX_KEYS_PER_IP`            | `3`          | Max concurrent sessions per IP (an IPv6 /56 counts as one IP, as do the rate limits); further requests return 429                     |
-| `RATE_LIMIT_WINDOW_MS`       | `900000`     | Rate-limit window for `/generate` (ms)                                                                                                |
-| `RATE_LIMIT_MAX`             | `20`         | Max key generations per window per IP                                                                                                 |
-| `LOG_LEVEL`                  | `info`       | Pino log level (`trace`, `debug`, `info`, `warn`, `error`)                                                                            |
-| `UPLOAD_CLEANUP_INTERVAL_MS` | `3600000`    | How often the orphaned-file cleanup worker runs (ms); defaults to `MAX_EXPIRE_MS`                                                     |
-| `GOOGLE_BOOKS_API_KEY`       | _(unset)_    | Google Books API key for EPUB metadata enrichment; without it the API may rate-limit requests                                         |
-| `KINDLE_CONVERTER`           | `kindling`   | Tool behind the "Kindle format" option: `kindling` or `kindlegen`                                                                     |
+| Variable                         | Default      | Description                                                                                                                           |
+| -------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `DISABLE_HSTS`                   | _(unset)_    | Set to `1` to disable HSTS and `upgrade-insecure-requests`. Use only when serving plain HTTP without a TLS-terminating reverse proxy. |
+| `PORT`                           | `3001`       | HTTP port the server listens on                                                                                                       |
+| `UPLOAD_DIR`                     | `uploads`    | Directory for temporary file storage                                                                                                  |
+| `EXPIRE_DELAY_MS`                | `300000`     | Inactivity timeout per key (ms)                                                                                                       |
+| `MAX_EXPIRE_MS`                  | `3600000`    | Hard maximum key lifetime (ms)                                                                                                        |
+| `SSE_MAX_DURATION_MS`            | `1800000`    | Maximum duration of an SSE `/events/:key` connection (ms)                                                                             |
+| `SSE_HEARTBEAT_MS`               | `25000`      | SSE keep-alive heartbeat interval (ms)                                                                                                |
+| `FILE_DELETE_DELAY_MS`           | `60000`      | Delay before deleting a file after download (ms)                                                                                      |
+| `MAX_FILE_SIZE`                  | `104857600`  | Upload size limit in bytes (100 MiB)                                                                                                  |
+| `MAX_DISK_BYTES`                 | `1073741824` | Total upload directory size cap in bytes (1 GiB); uploads return 507 when exceeded                                                    |
+| `MAX_FILES_PER_KEY`              | `5`          | Max files staged per session key; further uploads return 400                                                                          |
+| `MAX_URLS_PER_KEY`               | `20`         | Max URLs staged per session key; further submissions return 400                                                                       |
+| `MAX_ACTIVE_KEYS`                | `100`        | Max concurrent active sessions server-wide; further requests return 503                                                               |
+| `MAX_KEYS_PER_IP`                | `3`          | Max concurrent sessions per IP (an IPv6 /56 counts as one IP, as do the rate limits); further requests return 429                     |
+| `RATE_LIMIT_WINDOW_MS`           | `900000`     | Rate-limit window for all rate-limited routes (ms)                                                                                    |
+| `RATE_LIMIT_MAX`                 | `20`         | Max `/generate`, `/qr/:key`, and `/device/:key` requests per window per IP                                                            |
+| `UPLOAD_RATE_LIMIT_MAX`          | `10`         | Max `/upload` requests per window per IP                                                                                              |
+| `DOWNLOAD_RATE_LIMIT_MAX`        | `20`         | Max file download requests per window per IP                                                                                          |
+| `DELETE_RATE_LIMIT_MAX`          | `20`         | Max `/file` delete requests per window per IP                                                                                         |
+| `EVENTS_RATE_LIMIT_MAX`          | `5`          | Max `/events/:key` SSE connections per window per IP                                                                                  |
+| `STATUS_RATE_LIMIT_MAX`          | `120`        | Max failed `/status/:key` requests per window per IP                                                                                  |
+| `CONVERTER_TIMEOUT_MS`           | `55000`      | Timeout for `kindling`, `kepubify`, and `pdfCropMargins` (ms)                                                                         |
+| `KINDLEGEN_TIMEOUT_MS`           | `100000`     | Timeout for `kindlegen` (ms)                                                                                                          |
+| `KINDLING_MEMORY_LIMIT_BYTES`    | `402653184`  | Address-space cap for `kindling-cli` on Linux via `prlimit --as` (384 MiB; set `0` to disable)                                        |
+| `KINDLING_MAX_UNPACKED_BYTES`    | `268435456`  | Max declared uncompressed EPUB size for Kindle conversion (256 MiB)                                                                   |
+| `MAX_KINDLE_ENTRIES`             | `10000`      | Max zip entries inside an EPUB for Kindle conversion                                                                                  |
+| `MAX_CONVERT_UNCOMPRESSED_BYTES` | `536870912`  | Max declared uncompressed EPUB size for Kobo conversion (512 MiB)                                                                     |
+| `MAX_ZIP_INDEX_BYTES`            | `4194304`    | Max zip central directory size when inspecting EPUBs (4 MiB)                                                                          |
+| `LOG_LEVEL`                      | `info`       | Pino log level (`trace`, `debug`, `info`, `warn`, `error`)                                                                            |
+| `UPLOAD_CLEANUP_INTERVAL_MS`     | `3600000`    | How often the orphaned-file cleanup worker runs (ms); defaults to `MAX_EXPIRE_MS`                                                     |
+| `GOOGLE_BOOKS_API_KEY`           | _(unset)_    | Google Books API key for EPUB metadata enrichment; without it the API may rate-limit requests                                         |
+| `KINDLE_CONVERTER`               | `kindling`   | Tool behind the "Kindle format" option: `kindling` or `kindlegen`                                                                     |
 
 ## Docker
 
