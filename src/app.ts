@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { BOOKDROP_VERSION, DISABLE_HSTS, MAX_FILE_SIZE } from './config.js';
+import { BOOKDROP_VERSION, DISABLE_HSTS, MAX_FILE_SIZE, MAX_FILES_PER_KEY } from './config.js';
 import { logger } from './logger.js';
 import type { KeyInfo } from './types.js';
 import { isEreaderAgent, extractSharedUrl, formatLimit, newErrorRef } from './utils.js';
@@ -53,7 +53,11 @@ export function createApp(options?: { staticDir?: string; viewsDir?: string }) {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", (req) => `'nonce-${nonceMap.get(req) ?? ''}'`],
+          scriptSrc: [
+            "'self'",
+            "'wasm-unsafe-eval'",
+            (req) => `'nonce-${nonceMap.get(req) ?? ''}'`,
+          ],
           styleSrc: ["'self'"],
           imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'"],
@@ -143,6 +147,7 @@ export function createApp(options?: { staticDir?: string; viewsDir?: string }) {
       : {
           MAX_FILE_SIZE_PLACEHOLDER: String(MAX_FILE_SIZE),
           MAX_FILE_SIZE_LABEL_PLACEHOLDER: formatLimit(MAX_FILE_SIZE),
+          MAX_FILES_PER_KEY_PLACEHOLDER: String(MAX_FILES_PER_KEY),
           VERSION_PLACEHOLDER: BOOKDROP_VERSION,
         };
     void serveHtml(VIEWS_DIR, page, nonceMap.get(req) ?? '', res, next, extras);

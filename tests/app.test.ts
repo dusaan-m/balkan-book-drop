@@ -779,6 +779,7 @@ describe('GET /', () => {
     const res = await request(app).get('/').set('User-Agent', 'Mozilla/5.0 Chrome/120');
     assert.strictEqual(res.status, 200);
     assert.match(res.text, /<meta name="max-file-size" content="104857600"/);
+    assert.match(res.text, /<meta name="max-files-per-key" content="5"/);
     assert.match(res.text, /Up to 100 MB per file/);
   });
 
@@ -835,6 +836,10 @@ describe('CSP / nonce injection', () => {
       res.headers['content-security-policy-report-only'] ?? res.headers['content-security-policy'];
     assert.ok(cspHeader, 'CSP header must be present');
     assert.ok(cspHeader.includes(`'nonce-${nonce}'`), `CSP header should contain nonce-${nonce}`);
+    assert.ok(
+      cspHeader.includes("'wasm-unsafe-eval'"),
+      'CSP header should allow WebAssembly compilation for archive extraction'
+    );
   });
 });
 

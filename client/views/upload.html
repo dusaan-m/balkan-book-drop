@@ -15,6 +15,7 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#1c1917" />
     <meta name="max-file-size" content="MAX_FILE_SIZE_PLACEHOLDER" />
+    <meta name="max-files-per-key" content="MAX_FILES_PER_KEY_PLACEHOLDER" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -196,7 +197,7 @@
               </span>
             </button>
             <p class="zone-formats" id="zone-formats">
-              EPUB · MOBI · AZW3 · PDF · TXT · CBZ · CBR · PNG · JPG
+              EPUB · MOBI · AZW3 · PDF · TXT · CBZ · CBR · PNG · JPG · ZIP · RAR · 7Z · TAR
             </p>
             <p class="zone-formats" id="zone-limit">
               Up to MAX_FILE_SIZE_LABEL_PLACEHOLDER per file
@@ -349,6 +350,47 @@
       </form>
     </dialog>
 
+    <dialog id="zip-dialog" class="zip-dialog" aria-labelledby="zip-title">
+      <div class="zip-dialog-panel">
+        <button id="zip-close" type="button" class="howto-close" aria-label="Close">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+        <h2 id="zip-title" class="zip-title">Choose files from archive</h2>
+        <p id="zip-subtitle" class="zip-subtitle"></p>
+        <div class="zip-toolbar">
+          <button id="zip-toggle-all" type="button" class="btn-secondary">Deselect all</button>
+          <span id="zip-selection-summary" class="zip-selection-summary" aria-live="polite"></span>
+        </div>
+        <div
+          id="zip-limit-warning"
+          class="zip-limit-warning hidden"
+          role="status"
+          aria-live="polite"
+        ></div>
+        <div id="zip-error" class="status-msg status-error hidden" role="alert"></div>
+        <ul id="zip-file-list" class="zip-file-list" aria-label="Files in archive"></ul>
+        <div class="zip-actions">
+          <button id="zip-cancel" type="button" class="btn-secondary zip-cancel-btn">Cancel</button>
+          <button id="zip-confirm" type="button" class="btn-primary zip-confirm-btn">
+            Add selected files
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="archive.js" nonce="NONCE_PLACEHOLDER" defer></script>
     <script src="upload.js" nonce="NONCE_PLACEHOLDER" defer></script>
     <script nonce="NONCE_PLACEHOLDER">
       window.addEventListener('load', function () {

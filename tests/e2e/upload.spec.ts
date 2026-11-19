@@ -1,4 +1,6 @@
+import zlib from 'node:zlib';
 import { test, expect } from '@playwright/test';
+import JSZip from 'jszip';
 import { SUPPRESS_HOWTO_STORAGE } from '../../playwright.config';
 import { fakeEpub, realEpub } from './fakeEpub';
 
@@ -633,7 +635,7 @@ test('explains a missing extension when a file can’t be recognised', async ({ 
   await expect(page.locator('#status-msg')).toHaveClass(/status-error/);
   await expect(page.locator('#status-msg')).toHaveText(
     'Unsupported format: README\n' +
-      'Allowed: .epub, .mobi, .azw3, .pdf, .txt, .html, .cbz, .cbr, .png, .jpg, .jpeg\n' +
+      'Allowed: .epub, .mobi, .azw3, .pdf, .txt, .html, .cbz, .cbr, .png, .jpg, .jpeg, .zip, .rar, .7z, .tar\n' +
       'If this is a book, its name may be missing its extension (such as .epub). Try choosing it from Files.'
   );
   await expect(page.locator('#submit-btn')).toBeDisabled();
@@ -1051,4 +1053,300 @@ test('history clears between browser sessions', async ({ browser }) => {
   await page2.goto('/');
   await expect(page2.locator('#history')).toBeHidden();
   await ctx2.close();
+});
+
+async function makeZip(
+  entries: Record<string, string | Buffer>,
+  compression: 'STORE' | 'DEFLATE' = 'DEFLATE'
+): Promise<Buffer> {
+  const zip = new JSZip();
+  for (const [name, content] of Object.entries(entries)) {
+    zip.file(name, content, { compression });
+  }
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+test('picking a ZIP lets you select supported files and upload only those', async ({ page }) => {
+  const apiRes = await page.request.post('/generate', {
+    headers: { 'User-Agent': 'Kobo/4.0 Test', 'X-Requested-With': 'XMLHttpRequest' },
+  });
+  const key = (await apiRes.json()).key as string;
+
+  const archive = await makeZip({
+    'Fiction/Dune.epub': fakeEpub('dune'),
+    'Notes/readme.txt': 'hello from zip',
+    'cover.docx': 'unsupported word file',
+    '__MACOSX/Fiction/._Dune.epub': 'junk',
+    '.DS_Store': 'junk',
+  });
+
+  await page.goto('/');
+  await page.locator('#keyinput').fill(key);
+  await page.locator('#file-input').setInputFiles({
+    name: 'books.zip',
+    mimeType: 'application/zip',
+    buffer: archive,
+  });
+
+  const dialog = page.locator('#zip-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('#zip-subtitle')).toContainText('books.zip');
+  await expect(page.locator('#zip-subtitle')).toContainText('2 ebook files found');
+  await expect(page.locator('#zip-subtitle')).toContainText('1 unsupported file hidden');
+
+  const checkboxes = dialog.locator('input[type="checkbox"]');
+  await expect(checkboxes).toHaveCount(2);
+  await expect(checkboxes.nth(0)).toBeChecked();
+  await expect(checkboxes.nth(1)).toBeChecked();
+  await expect(page.locator('#zip-confirm')).toHaveText('Add 2 files');
+
+  // Uncheck Dune.epub, leaving only readme.txt selected.
+  await checkboxes.nth(0).uncheck();
+  await expect(page.locator('#zip-confirm')).toHaveText('Add 1 file');
+
+  await page.locator('#zip-confirm').click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#zone-file-name')).toHaveText('readme.txt');
+
+  await page.locator('#submit-btn').click();
+  await expect(page.locator('.toast')).toContainText('readme.txt', { timeout: 10_000 });
+});
+
+test('ZIP dialog Select all / Deselect all toggles checkboxes and Add button', async ({ page }) => {
+  const archive = await makeZip({
+    'a.txt': 'one',
+    'b.txt': 'two',
+  });
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'pair.zip',
+    mimeType: 'application/zip',
+    buffer: archive,
+  });
+
+  const dialog = page.locator('#zip-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('#zip-toggle-all')).toHaveText('Deselect all');
+
+  await page.locator('#zip-toggle-all').click();
+  await expect(page.locator('#zip-toggle-all')).toHaveText('Select all');
+  await expect(page.locator('#zip-confirm')).toBeDisabled();
+  await expect(page.locator('#zip-selection-summary')).toHaveText('0 of 2 selected');
+
+  await page.locator('#zip-toggle-all').click();
+  await expect(page.locator('#zip-toggle-all')).toHaveText('Deselect all');
+  await expect(page.locator('#zip-confirm')).toBeEnabled();
+  await expect(page.locator('#zip-confirm')).toHaveText('Add 2 files');
+});
+
+test('ZIP dialog warns when selection exceeds MAX_FILES_PER_KEY', async ({ page }) => {
+  const archive = await makeZip({
+    '1.txt': 'a',
+    '2.txt': 'b',
+    '3.txt': 'c',
+    '4.txt': 'd',
+    '5.txt': 'e',
+    '6.txt': 'f',
+  });
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'six.zip',
+    mimeType: 'application/zip',
+    buffer: archive,
+  });
+
+  const dialog = page.locator('#zip-dialog');
+  await expect(dialog).toBeVisible();
+  const warning = page.locator('#zip-limit-warning');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('up to 5 files');
+
+  // Uncheck one file to bring selection within the limit.
+  await dialog.locator('input[type="checkbox"]').first().uncheck();
+  await expect(warning).toBeHidden();
+});
+
+test('ZIP dialog disables oversized and encrypted entries with reasons', async ({ page }) => {
+  await page.route('/', async (route) => {
+    const res = await route.fetch();
+    const html = (await res.text()).replace(
+      /<meta name="max-file-size" content="\d+"/,
+      '<meta name="max-file-size" content="100"'
+    );
+    await route.fulfill({ response: res, body: html });
+  });
+
+  const zip = new JSZip();
+  zip.file('small.txt', 'ok', { compression: 'STORE' });
+  zip.file('huge.txt', 'X'.repeat(200), { compression: 'STORE' });
+  zip.file('locked.txt', 'secret', { compression: 'STORE' });
+  const raw = Buffer.from(await zip.generateAsync({ type: 'nodebuffer' }));
+  // Mark locked.txt encrypted in its central directory header.
+  const lockedIdx = raw.lastIndexOf(Buffer.from('locked.txt'));
+  const cdHeaderStart = raw.lastIndexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]), lockedIdx);
+  raw.writeUInt16LE(raw.readUInt16LE(cdHeaderStart + 8) | 0x1, cdHeaderStart + 8);
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'mixed-limits.zip',
+    mimeType: 'application/zip',
+    buffer: raw,
+  });
+
+  const dialog = page.locator('#zip-dialog');
+  await expect(dialog).toBeVisible();
+  const checkboxes = dialog.locator('input[type="checkbox"]');
+  await expect(checkboxes).toHaveCount(3);
+  await expect(checkboxes.nth(0)).toBeEnabled();
+  await expect(checkboxes.nth(0)).toBeChecked();
+  await expect(checkboxes.nth(1)).toBeDisabled();
+  await expect(checkboxes.nth(2)).toBeDisabled();
+  await expect(dialog).toContainText('Exceeds 1 KB limit');
+  await expect(dialog).toContainText('Password-protected');
+  await expect(page.locator('#zip-confirm')).toHaveText('Add 1 file');
+});
+
+test('shows an error without opening modal for empty or corrupt ZIPs', async ({ page }) => {
+  const noEbooksZip = await makeZip({ 'notes.docx': 'not an ebook' });
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'empty-books.zip',
+    mimeType: 'application/zip',
+    buffer: noEbooksZip,
+  });
+
+  await expect(page.locator('#zip-dialog')).toBeHidden();
+  await expect(page.locator('#status-msg')).toHaveClass(/status-error/);
+  await expect(page.locator('#status-msg')).toContainText(
+    '“empty-books.zip” doesn’t contain any supported ebook files.'
+  );
+
+  await page.locator('#file-input').setInputFiles({
+    name: 'broken.zip',
+    mimeType: 'application/zip',
+    buffer: Buffer.from('not really a zip'),
+  });
+
+  await expect(page.locator('#zip-dialog')).toBeHidden();
+  await expect(page.locator('#status-msg')).toContainText('“broken.zip” isn’t a valid archive.');
+});
+
+test('cancelling ZIP dialog keeps previous selection and allows re-selecting the same ZIP', async ({
+  page,
+}) => {
+  const archive = await makeZip({ 'from-zip.txt': 'hello' });
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'existing.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('already queued'),
+  });
+  await expect(page.locator('#zone-file-name')).toHaveText('existing.txt');
+
+  await page.locator('#file-input').setInputFiles({
+    name: 'pack.zip',
+    mimeType: 'application/zip',
+    buffer: archive,
+  });
+  await expect(page.locator('#zip-dialog')).toBeVisible();
+  await page.locator('#zip-cancel').click();
+  await expect(page.locator('#zip-dialog')).toBeHidden();
+  await expect(page.locator('#zone-file-name')).toHaveText('existing.txt');
+
+  // Re-selecting the exact same ZIP opens the modal again.
+  await page.locator('#file-input').setInputFiles({
+    name: 'pack.zip',
+    mimeType: 'application/zip',
+    buffer: archive,
+  });
+  await expect(page.locator('#zip-dialog')).toBeVisible();
+});
+
+test('dropping a ZIP together with a regular file combines both into the queue', async ({
+  page,
+}) => {
+  const archive = await makeZip({ 'inside.txt': 'from zip' });
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles([
+    { name: 'outside.txt', mimeType: 'text/plain', buffer: Buffer.from('regular') },
+    { name: 'bundle.zip', mimeType: 'application/zip', buffer: archive },
+  ]);
+
+  await expect(page.locator('#zip-dialog')).toBeVisible();
+  await page.locator('#zip-confirm').click();
+  await expect(page.locator('#zip-dialog')).toBeHidden();
+
+  await expect(page.locator('#zone-file-name')).toHaveText('2 files selected');
+  await expect(page.locator('#file-queue')).toContainText('outside.txt');
+  await expect(page.locator('#file-queue')).toContainText('inside.txt');
+});
+
+function makeTarGz(entries: Record<string, string | Buffer>): Buffer {
+  const blocks: Buffer[] = [];
+  for (const [name, content] of Object.entries(entries)) {
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8');
+    const header = Buffer.alloc(512);
+    header.write(name, 0, Math.min(name.length, 100), 'utf8');
+    header.write('0000644\0', 100, 8, 'ascii');
+    header.write('0000000\0', 108, 8, 'ascii');
+    header.write('0000000\0', 116, 8, 'ascii');
+    header.write(`${data.length.toString(8).padStart(11, '0')}\0`, 124, 12, 'ascii');
+    header.write('00000000000\0', 136, 12, 'ascii');
+    header.fill(0x20, 148, 156);
+    header.write('0', 156, 1, 'ascii');
+    header.write('ustar\0', 257, 6, 'ascii');
+    header.write('00', 263, 2, 'ascii');
+    let checksum = 0;
+    for (let i = 0; i < 512; i++) {
+      checksum += header[i];
+    }
+    header.write(`${checksum.toString(8).padStart(6, '0')}\0 `, 148, 8, 'ascii');
+    blocks.push(header);
+    const paddedSize = Math.ceil(data.length / 512) * 512;
+    const padded = Buffer.alloc(paddedSize);
+    data.copy(padded);
+    blocks.push(padded);
+  }
+  blocks.push(Buffer.alloc(1024));
+  return zlib.gzipSync(Buffer.concat(blocks));
+}
+
+test('extracts selected files from a .tar.gz archive via libarchive WASM worker', async ({
+  page,
+}) => {
+  const apiRes = await page.request.post('/generate', {
+    headers: { 'User-Agent': 'Kobo/4.0 Test', 'X-Requested-With': 'XMLHttpRequest' },
+  });
+  const key = (await apiRes.json()).key as string;
+
+  const archive = makeTarGz({
+    'Library/story.txt': 'hello from tar.gz',
+    'Library/notes.docx': 'unsupported',
+  });
+
+  await page.goto('/');
+  await page.locator('#keyinput').fill(key);
+  await page.locator('#file-input').setInputFiles({
+    name: 'books.tar.gz',
+    mimeType: 'application/gzip',
+    buffer: archive,
+  });
+
+  const dialog = page.locator('#zip-dialog');
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#zip-subtitle')).toContainText('books.tar.gz');
+  await expect(page.locator('#zip-subtitle')).toContainText('1 ebook file found');
+  await expect(page.locator('#zip-subtitle')).toContainText('1 unsupported file hidden');
+
+  await page.locator('#zip-confirm').click();
+  await expect(dialog).toBeHidden({ timeout: 15_000 });
+  await expect(page.locator('#zone-file-name')).toHaveText('story.txt');
+
+  await page.locator('#submit-btn').click();
+  await expect(page.locator('.toast')).toContainText('story.txt', { timeout: 10_000 });
 });

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import JSZip from 'jszip';
 import { fakeEpub } from './fakeEpub';
 
 const epub = (name: string) => ({
@@ -43,6 +44,23 @@ const uploadPageStates: [string, (page: Page) => Promise<void>][] = [
       await page.locator('#submit-btn').click();
       await expect(page.locator('.toast')).toContainText('2 files sent to Kobo');
       await expect(page.locator('#zone-empty')).toBeVisible();
+    },
+  ],
+  [
+    'with ZIP picker dialog open and limit warning visible',
+    async (page) => {
+      const zip = new JSZip();
+      for (let i = 1; i <= 6; i++) {
+        zip.file(`Series/book-${i}.epub`, fakeEpub(`book ${i}`));
+      }
+      const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+      await page.locator('#file-input').setInputFiles({
+        name: 'collection.zip',
+        mimeType: 'application/zip',
+        buffer,
+      });
+      await expect(page.locator('#zip-dialog')).toBeVisible();
+      await expect(page.locator('#zip-limit-warning')).toBeVisible();
     },
   ],
 ];
@@ -117,10 +135,10 @@ test.describe('Upload page (desktop)', () => {
     await expect(page.locator('#status-msg')).toContainText('4-character key');
   });
 
-  test('heading hierarchy: one h1 and h2 for each card section', async ({ page }) => {
+  test('heading hierarchy: one h1 and h2 for each card section and dialog', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h2')).toHaveCount(5);
+    await expect(page.locator('h2')).toHaveCount(6);
   });
 });
 

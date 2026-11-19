@@ -26,7 +26,7 @@
     "node": true,
     "browser": true
   },
-  "ignorePatterns": ["dist", "node_modules", "static", "*.d.ts"],
+  "ignorePatterns": ["dist", "node_modules", "static", "*.d.ts", "client/public/vendor"],
   "overrides": [
     {
       "files": ["client/public/download.js", "client/public/theme.js"],

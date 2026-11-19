@@ -11,8 +11,28 @@ const ACCEPTED_EXTENSIONS = [
   '.jpg',
   '.jpeg',
 ];
+const ARCHIVE_EXTENSIONS = window.BookDropArchive?.ARCHIVE_EXTENSIONS ?? [
+  '.zip',
+  '.rar',
+  '.7z',
+  '.tar',
+  '.tar.gz',
+  '.tgz',
+  '.tar.bz2',
+  '.tbz2',
+  '.tar.xz',
+  '.txz',
+];
 const ACCEPT_ATTR = [
   ...ACCEPTED_EXTENSIONS,
+  '.zip',
+  '.rar',
+  '.7z',
+  '.tar',
+  '.tgz',
+  '.gz',
+  '.bz2',
+  '.xz',
   'application/epub+zip',
   'application/epub',
   'application/x-mobipocket-ebook',
@@ -21,6 +41,15 @@ const ACCEPT_ATTR = [
   'text/html',
   'application/vnd.comicbook+zip',
   'application/vnd.comicbook-rar',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/vnd.rar',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+  'application/x-tar',
+  'application/gzip',
+  'application/x-bzip2',
+  'application/x-xz',
   'image/png',
   'image/jpeg',
 ].join(',');
@@ -50,9 +79,21 @@ const progressWrap = document.getElementById('progress-wrap');
 const progressFill = document.getElementById('progress-fill');
 const pageUrlLink = document.getElementById('page-url');
 const optionsNote = document.getElementById('options-note');
+const zipDialog = document.getElementById('zip-dialog');
+const zipCloseBtn = document.getElementById('zip-close');
+const zipSubtitle = document.getElementById('zip-subtitle');
+const zipToggleAllBtn = document.getElementById('zip-toggle-all');
+const zipSelectionSummary = document.getElementById('zip-selection-summary');
+const zipLimitWarning = document.getElementById('zip-limit-warning');
+const zipErrorEl = document.getElementById('zip-error');
+const zipFileList = document.getElementById('zip-file-list');
+const zipCancelBtn = document.getElementById('zip-cancel');
+const zipConfirmBtn = document.getElementById('zip-confirm');
 
 const MAX_FILE_SIZE =
   parseInt(document.querySelector('meta[name="max-file-size"]')?.content, 10) || 0;
+const MAX_FILES_PER_KEY =
+  parseInt(document.querySelector('meta[name="max-files-per-key"]')?.content, 10) || 0;
 
 const receiveUrl = `${window.location.origin}/receive`;
 pageUrlLink.href = receiveUrl;
@@ -514,7 +555,7 @@ function sizeMessage(file) {
   return `\u201c${file.name}\u201d is ${formatSize(file.size)} \u2014 the limit is ${formatLimit(MAX_FILE_SIZE)} per file.`;
 }
 
-const ALLOWED_FORMATS_LINE = `Allowed: ${ACCEPTED_EXTENSIONS.join(', ')}`;
+const ALLOWED_FORMATS_LINE = `Allowed: ${[...ACCEPTED_EXTENSIONS, '.zip', '.rar', '.7z', '.tar'].join(', ')}`;
 const MISSING_EXTENSION_HINT =
   'If this is a book, its name may be missing its extension (such as .epub). Try choosing it from Files.';
 
@@ -527,6 +568,24 @@ function rejectionMessage(rejected) {
     if (reason === 'size') {
       return sizeMessage(file);
     }
+    if (reason === 'archive-corrupt') {
+      return `\u201c${file.name}\u201d isn\u2019t a valid archive. It may be damaged or not fully downloaded.`;
+    }
+    if (reason === 'archive-encrypted') {
+      return `\u201c${file.name}\u201d is password-protected and can\u2019t be extracted here.`;
+    }
+    if (reason === 'archive-unsupported-browser') {
+      return `Your browser doesn\u2019t support extracting \u201c${file.name}\u201d. Please extract it on your device first.`;
+    }
+    if (reason === 'archive-empty') {
+      return `\u201c${file.name}\u201d doesn\u2019t contain any supported ebook files.\n${ALLOWED_FORMATS_LINE}`;
+    }
+    if (reason === 'archive-size') {
+      return `\u201c${file.name}\u201d exceeds the ${formatLimit(MAX_FILE_SIZE)} per-file limit.`;
+    }
+    if (reason === 'archive-extract') {
+      return `Couldn\u2019t extract \u201c${file.name}\u201d from the archive.`;
+    }
     return `\u201c${file.name}\u201d isn\u2019t a valid EPUB file. It may be damaged or not fully downloaded. Try downloading it again.`;
   }
   const lines = [`${rejected.length} files weren\u2019t added:`];
@@ -535,12 +594,29 @@ function rejectionMessage(rejected) {
       lines.push(`\u2022 \u201c${file.name}\u201d is an unsupported format.`);
     } else if (reason === 'size') {
       lines.push(`\u2022 ${sizeMessage(file)}`);
+    } else if (reason === 'archive-corrupt') {
+      lines.push(`\u2022 \u201c${file.name}\u201d isn\u2019t a valid archive.`);
+    } else if (reason === 'archive-encrypted') {
+      lines.push(`\u2022 \u201c${file.name}\u201d is password-protected.`);
+    } else if (reason === 'archive-unsupported-browser') {
+      lines.push(`\u2022 Your browser doesn\u2019t support extracting \u201c${file.name}\u201d.`);
+    } else if (reason === 'archive-empty') {
+      lines.push(`\u2022 \u201c${file.name}\u201d doesn\u2019t contain any supported ebook files.`);
+    } else if (reason === 'archive-size') {
+      lines.push(
+        `\u2022 \u201c${file.name}\u201d exceeds the ${formatLimit(MAX_FILE_SIZE)} per-file limit.`
+      );
+    } else if (reason === 'archive-extract') {
+      lines.push(`\u2022 Couldn\u2019t extract \u201c${file.name}\u201d from the archive.`);
     } else {
       lines.push(`\u2022 \u201c${file.name}\u201d isn\u2019t a valid EPUB file.`);
     }
   }
+  if (rejected.some((r) => r.reason === 'format' || r.reason === 'archive-empty')) {
+    lines.push(ALLOWED_FORMATS_LINE);
+  }
   if (rejected.some((r) => r.reason === 'format')) {
-    lines.push(ALLOWED_FORMATS_LINE, MISSING_EXTENSION_HINT);
+    lines.push(MISSING_EXTENSION_HINT);
   }
   if (rejected.some((r) => r.reason === 'epub')) {
     lines.push(
@@ -549,29 +625,482 @@ function rejectionMessage(rejected) {
   }
   return lines.join('\n');
 }
+
+function isArchiveFile(file) {
+  if (window.BookDropArchive?.isArchiveFilename) {
+    return window.BookDropArchive.isArchiveFilename(file.name);
+  }
+  const lower = (file.name || '').toLowerCase();
+  return ARCHIVE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+function zipEntryDisabledReason(entry) {
+  if (entry.encrypted) {
+    return 'Password-protected';
+  }
+  if (entry.unsupportedCompression) {
+    return 'Unsupported compression';
+  }
+  if (entry.uncompressedSize === 0) {
+    return 'Empty file';
+  }
+  if (MAX_FILE_SIZE && entry.uncompressedSize > MAX_FILE_SIZE) {
+    return `Exceeds ${formatLimit(MAX_FILE_SIZE)} limit`;
+  }
+  return null;
+}
+
+function uniqueExtractedName(name, usedNames) {
+  if (!usedNames.has(name)) {
+    usedNames.add(name);
+    return name;
+  }
+  const ext = getExtension(name);
+  const base = ext ? name.slice(0, -ext.length) : name;
+  let n = 2;
+  let candidate;
+  do {
+    candidate = `${base} (${n++})${ext}`;
+  } while (usedNames.has(candidate));
+  usedNames.add(candidate);
+  return candidate;
+}
+
+let zipDialogSession = null;
+
+function updateZipDialogSummary() {
+  if (!zipDialogSession) {
+    return;
+  }
+  const { items, pendingRegularFiles, extracting } = zipDialogSession;
+  const selectable = items.filter((item) => !item.disabledReason);
+  const checked = selectable.filter((item) => item.checked);
+  const totalBytes = checked.reduce((sum, item) => sum + item.entry.uncompressedSize, 0);
+
+  if (selectable.length === 0) {
+    zipToggleAllBtn.disabled = true;
+    zipToggleAllBtn.textContent = 'Select all';
+    zipSelectionSummary.textContent = 'No selectable files';
+  } else {
+    zipToggleAllBtn.disabled = extracting;
+    zipToggleAllBtn.textContent =
+      checked.length === selectable.length ? 'Deselect all' : 'Select all';
+    zipSelectionSummary.textContent =
+      checked.length > 0
+        ? `${checked.length} of ${selectable.length} selected (${formatSize(totalBytes)})`
+        : `0 of ${selectable.length} selected`;
+  }
+
+  const totalPlanned = checked.length + pendingRegularFiles.length;
+  if (MAX_FILES_PER_KEY > 0 && totalPlanned > MAX_FILES_PER_KEY) {
+    zipLimitWarning.textContent =
+      pendingRegularFiles.length > 0
+        ? `This session supports up to ${MAX_FILES_PER_KEY} files at a time (${totalPlanned} selected including files outside the archive). Extra files won\u2019t be accepted by the server.`
+        : `This session supports up to ${MAX_FILES_PER_KEY} files at a time (${checked.length} selected). Extra files won\u2019t be accepted by the server.`;
+    zipLimitWarning.classList.remove('hidden');
+  } else {
+    zipLimitWarning.textContent = '';
+    zipLimitWarning.classList.add('hidden');
+  }
+
+  zipConfirmBtn.disabled = extracting || checked.length === 0;
+  zipCancelBtn.disabled = extracting;
+  zipCloseBtn.disabled = extracting;
+  if (extracting) {
+    zipConfirmBtn.textContent = 'Extracting\u2026';
+  } else if (checked.length === 0) {
+    zipConfirmBtn.textContent = 'Add selected files';
+  } else if (checked.length === 1) {
+    zipConfirmBtn.textContent = 'Add 1 file';
+  } else {
+    zipConfirmBtn.textContent = `Add ${checked.length} files`;
+  }
+}
+
+function closeArchiveHandles(handles) {
+  for (const handle of handles) {
+    Promise.resolve(handle.close()).catch(() => {});
+  }
+}
+
+function closeZipDialog(cancelled) {
+  const session = zipDialogSession;
+  zipDialogSession = null;
+  if (zipDialog.open) {
+    zipDialog.close();
+  }
+  fileInput.value = '';
+  if (session) {
+    closeArchiveHandles(session.handles);
+  }
+  if (cancelled && session) {
+    if (session.pendingRegularFiles.length > 0) {
+      setFiles(session.pendingRegularFiles);
+    }
+    if (session.priorRejected.length > 0) {
+      showStatus('error', rejectionMessage(session.priorRejected));
+    }
+    zonePick.focus();
+  }
+}
+
+function openZipDialog({
+  archiveNames,
+  handles,
+  items,
+  skippedCount,
+  pendingRegularFiles,
+  priorRejected,
+}) {
+  if (zipDialogSession) {
+    closeArchiveHandles(zipDialogSession.handles);
+  }
+  const multiArchive = archiveNames.length > 1;
+  zipDialogSession = {
+    handles,
+    items,
+    pendingRegularFiles,
+    priorRejected,
+    multiArchive,
+    extracting: false,
+  };
+
+  const foundLabel =
+    items.length === 1 ? '1 ebook file found' : `${items.length} ebook files found`;
+  const archiveLabel = multiArchive ? `${archiveNames.length} archives` : archiveNames[0];
+  const parts = [`${archiveLabel} \u2014 ${foundLabel}`];
+  if (skippedCount > 0) {
+    parts.push(
+      skippedCount === 1
+        ? '1 unsupported file hidden'
+        : `${skippedCount} unsupported files hidden`
+    );
+  }
+  zipSubtitle.textContent = parts.join(' \u00b7 ');
+  zipErrorEl.textContent = '';
+  zipErrorEl.classList.add('hidden');
+  zipFileList.innerHTML = '';
+
+  items.forEach((item, idx) => {
+    const li = document.createElement('li');
+    const label = document.createElement('label');
+    label.className = `zip-item${item.disabledReason ? ' zip-item-disabled' : ''}`;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `zip-entry-${idx}`;
+    checkbox.checked = item.checked;
+    checkbox.disabled = Boolean(item.disabledReason);
+    checkbox.addEventListener('change', () => {
+      item.checked = checkbox.checked;
+      updateZipDialogSummary();
+    });
+    item.checkbox = checkbox;
+
+    const info = document.createElement('span');
+    info.className = 'zip-item-info';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'zip-item-name';
+    nameEl.textContent = item.entry.basename;
+    info.appendChild(nameEl);
+
+    const locationParts = [];
+    if (multiArchive) {
+      locationParts.push(item.zipFile.name);
+    }
+    if (item.entry.folder) {
+      locationParts.push(item.entry.folder);
+    }
+    if (locationParts.length > 0) {
+      const folderEl = document.createElement('span');
+      folderEl.className = 'zip-item-folder';
+      folderEl.textContent = locationParts.join(' / ');
+      info.appendChild(folderEl);
+    }
+
+    if (item.disabledReason) {
+      const reasonEl = document.createElement('span');
+      reasonEl.className = 'zip-item-reason';
+      reasonEl.textContent = item.disabledReason;
+      info.appendChild(reasonEl);
+    }
+
+    const meta = document.createElement('span');
+    meta.className = 'zip-item-meta';
+
+    const ext = getExtension(item.entry.basename).slice(1).toUpperCase();
+    if (ext) {
+      const extEl = document.createElement('span');
+      extEl.className = 'zip-item-ext';
+      extEl.textContent = ext;
+      meta.appendChild(extEl);
+    }
+
+    const sizeEl = document.createElement('span');
+    sizeEl.className = 'zip-item-size';
+    sizeEl.textContent = formatSize(item.entry.uncompressedSize);
+    meta.appendChild(sizeEl);
+
+    label.append(checkbox, info, meta);
+    li.appendChild(label);
+    zipFileList.appendChild(li);
+  });
+
+  updateZipDialogSummary();
+  if (typeof zipDialog.showModal === 'function') {
+    zipDialog.showModal();
+  }
+}
+
+async function confirmZipDialog() {
+  if (!zipDialogSession || zipDialogSession.extracting) {
+    return;
+  }
+  const session = zipDialogSession;
+  const chosen = session.items.filter((item) => !item.disabledReason && item.checked);
+  if (chosen.length === 0) {
+    return;
+  }
+
+  session.extracting = true;
+  session.items.forEach((item) => {
+    if (item.checkbox) {
+      item.checkbox.disabled = true;
+    }
+  });
+  zipErrorEl.textContent = '';
+  zipErrorEl.classList.add('hidden');
+  updateZipDialogSummary();
+
+  const usedNames = new Set(session.pendingRegularFiles.map((f) => f.name));
+  const extracted = [];
+  const rejected = [...session.priorRejected];
+
+  for (const item of chosen) {
+    const filename = uniqueExtractedName(item.entry.basename, usedNames);
+    try {
+      const file = await item.handle.extract(item.entry, {
+        maxBytes: MAX_FILE_SIZE,
+        filename,
+      });
+      extracted.push(file);
+    } catch (err) {
+      if (err?.code === 'unsupported-browser') {
+        session.extracting = false;
+        session.items.forEach((it) => {
+          if (it.checkbox) {
+            it.checkbox.disabled = Boolean(it.disabledReason);
+          }
+        });
+        zipErrorEl.textContent =
+          'Your browser doesn\u2019t support extracting this archive format. Please extract the archive on your device first.';
+        zipErrorEl.classList.remove('hidden');
+        updateZipDialogSummary();
+        return;
+      }
+      const reason =
+        err?.code === 'size'
+          ? 'archive-size'
+          : err?.code === 'encrypted'
+            ? 'archive-encrypted'
+            : 'archive-extract';
+      rejected.push({
+        file: { name: filename, size: item.entry.uncompressedSize },
+        reason,
+      });
+    }
+  }
+
+  const reasons = await Promise.all(extracted.map(rejectionReason));
+  const validExtracted = extracted.filter((_, i) => reasons[i] === null);
+  extracted.forEach((file, i) => {
+    if (reasons[i] !== null) {
+      rejected.push({ file, reason: reasons[i] });
+    }
+  });
+
+  const combined = [...session.pendingRegularFiles, ...validExtracted];
+  closeZipDialog(false);
+
+  if (combined.length > 0) {
+    setFiles(combined);
+  }
+  if (rejected.length > 0) {
+    showStatus('error', rejectionMessage(rejected));
+  } else {
+    hideStatus();
+    zonePick.focus();
+  }
+}
+
+if (zipDialog) {
+  let zipDownOnBackdrop = false;
+  zipDialog.addEventListener('mousedown', (e) => {
+    zipDownOnBackdrop = e.target === zipDialog;
+  });
+  zipDialog.addEventListener('mouseup', (e) => {
+    if (zipDownOnBackdrop && e.target === zipDialog && !zipDialogSession?.extracting) {
+      closeZipDialog(true);
+    }
+    zipDownOnBackdrop = false;
+  });
+  zipDialog.addEventListener('cancel', (e) => {
+    e.preventDefault();
+    if (!zipDialogSession?.extracting) {
+      closeZipDialog(true);
+    }
+  });
+  zipCloseBtn.addEventListener('click', () => {
+    if (!zipDialogSession?.extracting) {
+      closeZipDialog(true);
+    }
+  });
+  zipCancelBtn.addEventListener('click', () => {
+    if (!zipDialogSession?.extracting) {
+      closeZipDialog(true);
+    }
+  });
+  zipToggleAllBtn.addEventListener('click', () => {
+    if (!zipDialogSession || zipDialogSession.extracting) {
+      return;
+    }
+    const selectable = zipDialogSession.items.filter((item) => !item.disabledReason);
+    const shouldCheck = selectable.some((item) => !item.checked);
+    selectable.forEach((item) => {
+      item.checked = shouldCheck;
+      if (item.checkbox) {
+        item.checkbox.checked = shouldCheck;
+      }
+    });
+    updateZipDialogSummary();
+  });
+  zipConfirmBtn.addEventListener('click', confirmZipDialog);
+}
+
 async function handleFiles(files) {
   const id = ++handleFilesId;
   if (!files || files.length === 0) {
     setFiles([]);
     return;
   }
-  const list = await Promise.all(Array.from(files).map(withDetectedExtension));
-  const reasons = await Promise.all(list.map(rejectionReason));
+  const incoming = Array.from(files);
+  const archiveFiles = incoming.filter(isArchiveFile);
+  const regularInput = incoming.filter((f) => !isArchiveFile(f));
+
+  const regularList = await Promise.all(regularInput.map(withDetectedExtension));
+  const regularReasons = await Promise.all(regularList.map(rejectionReason));
   if (id !== handleFilesId) {
     return;
   }
-  const valid = list.filter((_, i) => reasons[i] === null);
-  const rejected = list
-    .map((file, i) => ({ file, reason: reasons[i] }))
+
+  const validRegular = regularList.filter((_, i) => regularReasons[i] === null);
+  const rejected = regularList
+    .map((file, i) => ({ file, reason: regularReasons[i] }))
     .filter((r) => r.reason !== null);
-  if (valid.length > 0) {
-    setFiles(valid);
+
+  if (archiveFiles.length === 0) {
+    if (validRegular.length > 0) {
+      setFiles(validRegular);
+    }
+    if (rejected.length > 0) {
+      showStatus('error', rejectionMessage(rejected));
+    } else {
+      hideStatus();
+    }
+    return;
   }
-  if (rejected.length > 0) {
-    showStatus('error', rejectionMessage(rejected));
-  } else {
+
+  const needsWasmNotice = archiveFiles.some((f) => !f.name.toLowerCase().endsWith('.zip'));
+  if (needsWasmNotice) {
+    showStatus('info', 'Inspecting archive\u2026');
+  }
+
+  const inspections = await Promise.all(
+    archiveFiles.map(async (archiveFile) => {
+      try {
+        const handle = await window.BookDropArchive.openArchive(archiveFile);
+        return { archiveFile, handle, error: null };
+      } catch (err) {
+        return { archiveFile, handle: null, error: err };
+      }
+    })
+  );
+
+  if (id !== handleFilesId) {
+    closeArchiveHandles(inspections.map((r) => r.handle).filter(Boolean));
+    return;
+  }
+
+  const archiveItems = [];
+  const validArchiveNames = [];
+  const activeHandles = [];
+  let skippedCount = 0;
+
+  for (const { archiveFile, handle, error } of inspections) {
+    if (error || !handle) {
+      const reason =
+        error?.code === 'encrypted'
+          ? 'archive-encrypted'
+          : error?.code === 'unsupported-browser'
+            ? 'archive-unsupported-browser'
+            : 'archive-corrupt';
+      rejected.push({ file: archiveFile, reason });
+      continue;
+    }
+    const supported = [];
+    for (const entry of handle.entries) {
+      if (ACCEPTED_EXTENSIONS.includes(getExtension(entry.basename))) {
+        supported.push(entry);
+      } else {
+        skippedCount++;
+      }
+    }
+    if (supported.length === 0) {
+      closeArchiveHandles([handle]);
+      rejected.push({ file: archiveFile, reason: 'archive-empty' });
+      continue;
+    }
+    validArchiveNames.push(archiveFile.name);
+    activeHandles.push(handle);
+    for (const entry of supported) {
+      const disabledReason = zipEntryDisabledReason(entry);
+      archiveItems.push({
+        zipFile: archiveFile,
+        handle,
+        entry,
+        disabledReason,
+        checked: disabledReason === null,
+        checkbox: null,
+      });
+    }
+  }
+
+  if (archiveItems.length === 0) {
+    fileInput.value = '';
+    if (validRegular.length > 0) {
+      setFiles(validRegular);
+    }
+    if (rejected.length > 0) {
+      showStatus('error', rejectionMessage(rejected));
+    } else if (needsWasmNotice) {
+      hideStatus();
+    }
+    return;
+  }
+
+  if (needsWasmNotice) {
     hideStatus();
   }
+
+  openZipDialog({
+    archiveNames: validArchiveNames,
+    handles: activeHandles,
+    items: archiveItems,
+    skippedCount,
+    pendingRegularFiles: validRegular,
+    priorRejected: rejected,
+  });
 }
 
 zoneClearBtn.addEventListener('click', (e) => {

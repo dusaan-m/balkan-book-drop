@@ -654,8 +654,221 @@ details#history {
   padding: 0.6rem 1.5rem;
 }
 
+.zip-dialog {
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: min(540px, calc(100vw - 2rem));
+  width: 100%;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  &[open] {
+    animation: howto-in 0.18s ease-out;
+  }
+}
+
+.zip-dialog-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: min(85vh, 640px);
+  @include m.theme-prop(background, 'surface');
+  @include m.theme-prop(color, 'text');
+  @include m.theme-border('border');
+  border-radius: t.$radius-lg;
+  box-shadow: t.$shadow;
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.zip-title {
+  font-size: t.$font-lg;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  padding-right: 2rem;
+  @include m.theme-prop(color, 'text');
+}
+
+.zip-subtitle {
+  font-size: t.$font-sm;
+  @include m.theme-prop(color, 'text-muted');
+  margin: 0 0 0.85rem;
+  word-break: break-word;
+}
+
+.zip-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.zip-selection-summary {
+  font-size: t.$font-sm;
+  @include m.theme-prop(color, 'text-muted');
+}
+
+.zip-limit-warning {
+  padding: 0.6rem 0.85rem;
+  border-radius: t.$radius-sm;
+  font-size: t.$font-sm;
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+  @include m.theme-prop(background, 'warning-bg');
+  @include m.theme-border('warning-border');
+  @include m.theme-prop(color, 'warning-text');
+}
+
+.zip-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.zip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: t.$radius-sm;
+  @include m.theme-prop(background, 'bg');
+  @include m.theme-border('border');
+  cursor: pointer;
+  transition:
+    border-color t.$duration,
+    background t.$duration;
+
+  &:has(input:checked) {
+    @include m.theme-prop(border-color, 'accent');
+    @include m.theme-prop(background, 'accent-subtle');
+  }
+
+  &.zip-item-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+
+    input {
+      cursor: not-allowed;
+    }
+  }
+
+  input[type='checkbox'] {
+    margin-top: 0.2rem;
+    @include m.theme-prop(accent-color, 'accent');
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+}
+
+.zip-item-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.zip-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: t.$font-base;
+  font-weight: 500;
+  @include m.theme-prop(color, 'text');
+}
+
+.zip-item-folder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: t.$font-xs;
+  @include m.theme-prop(color, 'text-muted');
+}
+
+.zip-item-reason {
+  font-size: t.$font-xs;
+  @include m.theme-prop(color, 'error-text');
+}
+
+.zip-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.zip-item-ext {
+  font-size: t.$font-xs;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.1em 0.45em;
+  border-radius: 3px;
+  @include m.theme-prop(background, 'surface');
+  @include m.theme-border('border');
+  @include m.theme-prop(color, 'text-muted');
+}
+
+.zip-item-size {
+  font-size: t.$font-sm;
+  @include m.theme-prop(color, 'text-muted');
+  white-space: nowrap;
+}
+
+.zip-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  @include m.theme-border('border', 1px, solid, top);
+}
+
+.zip-cancel-btn {
+  padding: 0.65rem 1.1rem;
+  font-size: t.$font-base;
+}
+
+.zip-confirm-btn {
+  width: auto;
+  padding: 0.65rem 1.25rem;
+  font-size: t.$font-base;
+}
+
+@include m.breakpoint('sm') {
+  .zip-dialog-panel {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .zip-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .zip-cancel-btn,
+  .zip-confirm-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .howto-dialog[open] {
+  .howto-dialog[open],
+  .zip-dialog[open] {
     animation: none;
   }
 }
