@@ -60,11 +60,13 @@ COPY --from=builder /build/dist ./dist
 COPY --from=builder /build/client/public ./client/public
 COPY client/views ./client/views
 
-# The app user can write only its uploads and home, not the code it runs.
-RUN mkdir uploads && \
+# The app user can write only its uploads, data cache, and home, not the code it runs.
+# chmod 0777 allows arbitrary non-root UIDs (such as Heroku dynos) to write to uploads and data.
+RUN mkdir uploads data && \
     groupadd --system appgroup && \
     useradd --system --gid appgroup --create-home --home-dir /home/appuser appuser && \
-    chown appuser:appgroup uploads
+    chown appuser:appgroup uploads data && \
+    chmod 0777 uploads data
 USER appuser
 
 ARG BOOKDROP_VERSION=dev

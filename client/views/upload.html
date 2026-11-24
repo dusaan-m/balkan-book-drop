@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BookDrop | Send ebooks to your Kobo, Kindle, or Tolino</title>
+    <title>Dule BookDrop | Send ebooks to your Kobo, Kindle, or Tolino</title>
 
     <link rel="canonical" href="https://bookdrop.cc/" />
     <meta
@@ -16,16 +16,20 @@
     <meta name="theme-color" content="#1c1917" />
     <meta name="max-file-size" content="MAX_FILE_SIZE_PLACEHOLDER" />
     <meta name="max-files-per-key" content="MAX_FILES_PER_KEY_PLACEHOLDER" />
+    <meta name="balkandownload-enabled" content="BALKANDOWNLOAD_ENABLED_PLACEHOLDER" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="msapplication-TileColor" content="#1c1917" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="BookDrop" />
+    <meta property="og:site_name" content="Dule BookDrop" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://bookdrop.cc/" />
-    <meta property="og:title" content="BookDrop | Send ebooks to your Kobo, Kindle, or Tolino" />
+    <meta
+      property="og:title"
+      content="Dule BookDrop | Send ebooks to your Kobo, Kindle, or Tolino"
+    />
     <meta
       property="og:description"
       content="Send ebooks to your Kobo, Kindle, or Tolino in seconds."
@@ -35,11 +39,14 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="BookDrop — send ebooks to your Kobo, Kindle, or Tolino in seconds"
+      content="Dule BookDrop — send ebooks to your Kobo, Kindle, or Tolino in seconds"
     />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BookDrop | Send ebooks to your Kobo, Kindle, or Tolino" />
+    <meta
+      name="twitter:title"
+      content="Dule BookDrop | Send ebooks to your Kobo, Kindle, or Tolino"
+    />
     <meta
       name="twitter:description"
       content="Send ebooks to your Kobo, Kindle, or Tolino in seconds."
@@ -47,14 +54,14 @@
     <meta name="twitter:image" content="https://bookdrop.cc/og-image.png" />
     <meta
       name="twitter:image:alt"
-      content="BookDrop — send ebooks to your Kobo, Kindle, or Tolino in seconds"
+      content="Dule BookDrop — send ebooks to your Kobo, Kindle, or Tolino in seconds"
     />
 
     <script type="application/ld+json" nonce="NONCE_PLACEHOLDER">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "BookDrop",
+        "name": "Dule BookDrop",
         "url": "https://bookdrop.cc/",
         "description": "Send ebooks to your Kobo, Kindle, or Tolino in seconds. Upload an EPUB, MOBI, PDF, or other format and it appears on your e-reader instantly.",
         "applicationCategory": "UtilityApplication",
@@ -88,9 +95,32 @@
   <body>
     <main class="wrapper">
       <header class="page-header">
-        <h1>BookDrop</h1>
+        <h1>Dule BookDrop</h1>
         <p>Send ebooks to your Kobo, Kindle, or Tolino</p>
         <div class="header-actions">
+          <button
+            id="bd-open-header"
+            class="btn-help hidden"
+            type="button"
+            aria-label="Search BalkanDownload e-books"
+            title="Search BalkanDownload e-books"
+            aria-haspopup="dialog"
+            aria-controls="bd-dialog"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
           <button
             id="howto-toggle"
             class="btn-help"
@@ -272,6 +302,34 @@
         </div>
       </form>
 
+      <section
+        id="bd-launcher-card"
+        class="card bd-launcher hidden"
+        aria-labelledby="bd-launcher-title"
+      >
+        <div class="bd-launcher-head">
+          <h2 id="bd-launcher-title" class="card-title">Find books on BalkanDownload</h2>
+          <span id="bd-launcher-badge" class="bd-launcher-badge"></span>
+        </div>
+        <form id="bd-launcher-form" class="bd-launcher-form" role="search">
+          <label for="bd-launcher-input" class="visually-hidden"
+            >Search BalkanDownload e-books</label
+          >
+          <input
+            id="bd-launcher-input"
+            type="search"
+            class="url-input bd-launcher-input"
+            placeholder="Search author or title (Domaće &amp; Strane)…"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-secondary bd-launcher-btn">Search</button>
+        </form>
+        <p class="hint">
+          Browse authors and individual book posts, then open the thread on BalkanDownload to thank
+          &amp; download.
+        </p>
+      </section>
+
       <details id="history" class="card hidden">
         <summary class="history-summary">
           Recently sent<span class="history-chevron" aria-hidden="true"></span>
@@ -390,7 +448,141 @@
       </div>
     </dialog>
 
+    <dialog id="bd-dialog" class="bd-dialog" aria-labelledby="bd-title">
+      <div class="bd-dialog-panel">
+        <button id="bd-close" type="button" class="howto-close" aria-label="Close">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        <header class="bd-dialog-header">
+          <h2 id="bd-title" class="bd-title">BalkanDownload E-Books</h2>
+          <div class="bd-status-row">
+            <span id="bd-status-text" class="bd-status-text" aria-live="polite"
+              >Loading catalog status…</span
+            >
+            <button id="bd-sync-btn" type="button" class="btn-secondary bd-mini-btn">
+              Sync catalog
+            </button>
+          </div>
+        </header>
+
+        <div id="bd-step-search" class="bd-step">
+          <div class="bd-search-controls">
+            <label for="bd-search-input" class="visually-hidden"
+              >Search BalkanDownload authors and topics</label
+            >
+            <input
+              id="bd-search-input"
+              type="search"
+              class="url-input bd-search-input"
+              placeholder="Search author or title (e.g. Mirko Kovac, Ludlum)…"
+              autocomplete="off"
+              maxlength="100"
+            />
+            <div class="bd-filter-group" role="group" aria-label="Catalog section">
+              <button
+                type="button"
+                class="bd-filter-btn is-active"
+                data-section="all"
+                aria-pressed="true"
+              >
+                All
+              </button>
+              <button
+                type="button"
+                class="bd-filter-btn"
+                data-section="domace"
+                aria-pressed="false"
+              >
+                Domaće
+              </button>
+              <button
+                type="button"
+                class="bd-filter-btn"
+                data-section="strane"
+                aria-pressed="false"
+              >
+                Strane
+              </button>
+            </div>
+          </div>
+
+          <div id="bd-search-error" class="status-msg status-error hidden" role="alert"></div>
+          <p id="bd-results-meta" class="bd-meta" aria-live="polite"></p>
+          <ul id="bd-topic-list" class="bd-list" aria-label="Matching topics"></ul>
+          <p id="bd-search-empty" class="bd-empty">
+            Type an author name or title to search Domaće &amp; Strane e-book threads.
+          </p>
+        </div>
+
+        <div id="bd-step-books" class="bd-step hidden">
+          <div class="bd-books-header">
+            <div class="bd-books-nav">
+              <button id="bd-back-btn" type="button" class="btn-secondary bd-mini-btn">
+                ← Back
+              </button>
+              <div class="bd-books-actions">
+                <a
+                  id="bd-topic-open-link"
+                  class="btn-secondary bd-mini-btn bd-link-btn"
+                  href="https://www.balkandownload.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Open thread ↗</a
+                >
+                <button id="bd-topic-refresh-btn" type="button" class="btn-secondary bd-mini-btn">
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <div class="bd-topic-heading">
+              <h3 id="bd-topic-title" class="bd-topic-title"></h3>
+              <span id="bd-topic-badge" class="bd-badge"></span>
+            </div>
+          </div>
+
+          <div id="bd-book-filter-wrap" class="bd-book-filter-wrap hidden">
+            <label for="bd-book-filter" class="visually-hidden">Filter books in this thread</label>
+            <input
+              id="bd-book-filter"
+              type="search"
+              class="url-input bd-book-filter"
+              placeholder="Filter books or format in this thread (e.g. epub)…"
+              autocomplete="off"
+            />
+          </div>
+
+          <div id="bd-books-error" class="status-msg status-error hidden" role="alert"></div>
+          <div
+            id="bd-books-truncated"
+            class="zip-limit-warning hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
+          <p id="bd-books-meta" class="bd-meta" aria-live="polite"></p>
+          <div id="bd-books-loading" class="bd-loading hidden" role="status" aria-live="polite">
+            Loading books from thread…
+          </div>
+          <ul id="bd-book-list" class="bd-list" aria-label="Books in thread"></ul>
+          <p id="bd-books-empty" class="bd-empty hidden"></p>
+        </div>
+      </div>
+    </dialog>
+
     <script src="archive.js" nonce="NONCE_PLACEHOLDER" defer></script>
+    <script src="balkandownload.js" nonce="NONCE_PLACEHOLDER" defer></script>
     <script src="upload.js" nonce="NONCE_PLACEHOLDER" defer></script>
     <script nonce="NONCE_PLACEHOLDER">
       window.addEventListener('load', function () {

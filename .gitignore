@@ -13,6 +13,7 @@ client/public/*.css.map
 .env.*.local
 
 uploads
+data
 
 coverage
 

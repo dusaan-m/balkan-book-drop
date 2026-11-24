@@ -25,3 +25,8 @@ services:
         required: false
     environment:
       - PORT
+    volumes:
+      - balkandownload-data:/usr/src/app/data
+
+volumes:
+  balkandownload-data:

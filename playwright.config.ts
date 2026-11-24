@@ -27,6 +27,8 @@ export default defineConfig({
       RATE_LIMIT_MAX: '200',
       UPLOAD_RATE_LIMIT_MAX: '200',
       DISABLE_HSTS: '1',
+      BALKANDOWNLOAD_ENABLED: '0',
+      BALKANDOWNLOAD_DB_PATH: '.tmp/bookdrop-e2e-bd.sqlite',
       PORT,
     },
     url: BASE_URL,

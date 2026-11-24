@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { basename, dirname, extname, join } from 'path';
 import { logger } from './logger.js';
 import { readZipEntries } from './utils.js';
@@ -31,6 +31,24 @@ function converterEnv(): NodeJS.ProcessEnv {
   );
 }
 
+let choomAvailable: boolean | null = null;
+
+function canUseChoom(): boolean {
+  if (process.platform !== 'linux') {
+    return false;
+  }
+  if (choomAvailable === null) {
+    const res = spawnSync('choom', ['-n', '1000', '--', 'true'], { stdio: 'ignore' });
+    choomAvailable = !res.error && res.status === 0;
+    if (!choomAvailable) {
+      logger.warn(
+        'choom is unavailable or disallowed in this container; running converters without OOM score adjustment'
+      );
+    }
+  }
+  return choomAvailable;
+}
+
 function spawnProcess(
   cmd: string,
   args: string[],
@@ -53,12 +71,15 @@ function spawnProcess(
     let truncated = false;
     const options = { cwd, env: converterEnv() };
     // If memory runs out, the kernel kills a converter rather than the server and its sessions.
-    // choom and prlimit are Linux-only; elsewhere, as in development, converters run unrestricted.
-    const memoryCap = memoryLimitBytes ? ['prlimit', `--as=${memoryLimitBytes}`, '--'] : [];
-    const proc =
-      process.platform === 'linux'
-        ? spawn('choom', ['-n', '1000', '--', ...memoryCap, cmd, ...args], options)
-        : spawn(cmd, args, options);
+    // choom and prlimit are Linux-only; elsewhere (or in restricted containers), converters fall back gracefully.
+    const memoryCap =
+      process.platform === 'linux' && memoryLimitBytes
+        ? ['prlimit', `--as=${memoryLimitBytes}`, '--']
+        : [];
+    const wrapper = canUseChoom() ? ['choom', '-n', '1000', '--', ...memoryCap] : memoryCap;
+    const [execCmd, execArgs] =
+      wrapper.length > 0 ? [wrapper[0], [...wrapper.slice(1), cmd, ...args]] : [cmd, args];
+    const proc = spawn(execCmd, execArgs, options);
     const timer = setTimeout(() => {
       proc.kill();
       reject(new Error(`${cmd} timed out after ${timeoutMs} ms`));

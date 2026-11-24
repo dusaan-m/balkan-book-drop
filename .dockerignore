@@ -1,3 +1,11 @@
 .git
 /uploads
+/data
+/dist
 /node_modules
+/coverage
+/playwright-report
+/test-results
+/static
+.env
+.env.*

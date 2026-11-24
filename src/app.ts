@@ -13,10 +13,16 @@ import { isEreaderAgent, extractSharedUrl, formatLimit, newErrorRef } from './ut
 import { serveHtml, makeNotifySSE } from './middleware.js';
 import { makeKeysRouter } from './routes/keys.js';
 import { makeUploadRouter } from './routes/upload.js';
+import { makeBalkanDownloadRouter } from './routes/balkandownload.js';
+import type { BalkanDownloadService } from './balkandownload/service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export function createApp(options?: { staticDir?: string; viewsDir?: string }) {
+export function createApp(options?: {
+  staticDir?: string;
+  viewsDir?: string;
+  balkanDownload?: BalkanDownloadService | null;
+}) {
   const STATIC_DIR = options?.staticDir ?? path.join(__dirname, '../client/public');
   const VIEWS_DIR = options?.viewsDir ?? path.join(__dirname, '../client/views');
   const keys = new Map<string, KeyInfo>();
@@ -116,6 +122,9 @@ export function createApp(options?: { staticDir?: string; viewsDir?: string }) {
     next();
   });
 
+  if (options?.balkanDownload) {
+    app.use(makeBalkanDownloadRouter(options.balkanDownload));
+  }
   app.use(makeKeysRouter(keys, sseClients, notifySSE));
   app.use(makeUploadRouter(keys, notifySSE));
 
@@ -149,6 +158,7 @@ export function createApp(options?: { staticDir?: string; viewsDir?: string }) {
           MAX_FILE_SIZE_LABEL_PLACEHOLDER: formatLimit(MAX_FILE_SIZE),
           MAX_FILES_PER_KEY_PLACEHOLDER: String(MAX_FILES_PER_KEY),
           VERSION_PLACEHOLDER: BOOKDROP_VERSION,
+          BALKANDOWNLOAD_ENABLED_PLACEHOLDER: options?.balkanDownload ? '1' : '0',
         };
     void serveHtml(VIEWS_DIR, page, nonceMap.get(req) ?? '', res, next, extras);
   });

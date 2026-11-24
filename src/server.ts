@@ -3,11 +3,33 @@ import fs from 'fs/promises';
 import express from 'express';
 import { createApp } from './app.js';
 import { logger } from './logger.js';
-import { PORT, UPLOAD_DIR, MAX_EXPIRE_MS, UPLOAD_CLEANUP_INTERVAL_MS } from './config.js';
+import {
+  PORT,
+  UPLOAD_DIR,
+  MAX_EXPIRE_MS,
+  UPLOAD_CLEANUP_INTERVAL_MS,
+  BALKANDOWNLOAD_ENABLED,
+  BALKANDOWNLOAD_DB_PATH,
+  BALKANDOWNLOAD_SYNC_INTERVAL_MS,
+  BALKANDOWNLOAD_THREAD_CACHE_TTL_MS,
+  BALKANDOWNLOAD_MAX_THREAD_PAGES,
+  BALKANDOWNLOAD_REQUEST_TIMEOUT_MS,
+} from './config.js';
 import { cleanExpiredUploads } from './cleanup.js';
+import { BalkanDownloadService } from './balkandownload/service.js';
 
 async function main(): Promise<void> {
-  const { app, keys } = createApp();
+  const balkanDownload = BALKANDOWNLOAD_ENABLED
+    ? new BalkanDownloadService({
+        dbPath: BALKANDOWNLOAD_DB_PATH,
+        syncIntervalMs: BALKANDOWNLOAD_SYNC_INTERVAL_MS,
+        threadCacheTtlMs: BALKANDOWNLOAD_THREAD_CACHE_TTL_MS,
+        maxThreadPages: BALKANDOWNLOAD_MAX_THREAD_PAGES,
+        requestTimeoutMs: BALKANDOWNLOAD_REQUEST_TIMEOUT_MS,
+      })
+    : null;
+
+  const { app, keys } = createApp({ balkanDownload });
 
   await cleanExpiredUploads(UPLOAD_DIR, keys, MAX_EXPIRE_MS);
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
@@ -19,8 +41,22 @@ async function main(): Promise<void> {
     UPLOAD_CLEANUP_INTERVAL_MS
   );
 
+  let bdSyncTimer: ReturnType<typeof setInterval> | null = null;
+  if (balkanDownload) {
+    balkanDownload.ensureFreshCatalog();
+    const checkInterval = Math.max(60_000, Math.min(BALKANDOWNLOAD_SYNC_INTERVAL_MS, 60 * 60_000));
+    bdSyncTimer = setInterval(() => {
+      balkanDownload.ensureFreshCatalog();
+    }, checkInterval);
+    bdSyncTimer.unref();
+  }
+
   function shutdown() {
     clearInterval(cleanupTimer);
+    if (bdSyncTimer) {
+      clearInterval(bdSyncTimer);
+    }
+    balkanDownload?.close();
     server.close(() => process.exit(0));
   }
   process.on('SIGTERM', shutdown);
