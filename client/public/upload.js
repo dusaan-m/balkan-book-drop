@@ -155,7 +155,7 @@ const OPTIONS = [
   },
 ];
 
-const BUG_REPORT_URL = 'https://github.com/dusaan-m/custom-book-drop/issues/new';
+const BUG_REPORT_URL = 'https://github.com/dusaan-m/balkan-book-drop/issues/new';
 const appVersion = document.getElementById('app-version')?.textContent ?? 'unknown';
 
 let detectedDevice = null;

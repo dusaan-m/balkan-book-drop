@@ -708,7 +708,7 @@ test('links a failure with a reference to a prefilled bug report', async ({ page
   await expect(status).toContainText('Conversion failed\nReference: 7F3A9C21');
   const href = await status.getByRole('link', { name: 'Report this problem' }).getAttribute('href');
   const url = new URL(href!);
-  expect(url.origin + url.pathname).toBe('https://github.com/dusaan-m/custom-book-drop/issues/new');
+  expect(url.origin + url.pathname).toBe('https://github.com/dusaan-m/balkan-book-drop/issues/new');
   expect(url.searchParams.get('template')).toBe('bug_report.yml');
   expect(url.searchParams.get('error')).toBe('Conversion failed\nReference: 7F3A9C21');
   expect(url.searchParams.get('time')).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);

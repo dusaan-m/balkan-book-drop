@@ -4,7 +4,7 @@ Thanks for helping out! Bug reports, fixes, and ideas are all welcome.
 
 ## Before you start
 
-- **Bugs:** open an [issue](https://github.com/dusaan-m/custom-book-drop/issues/new/choose) with your e-reader model and the file type you were sending.
+- **Bugs:** open an [issue](https://github.com/dusaan-m/balkan-book-drop/issues/new/choose) with your e-reader model and the file type you were sending.
 - **New features:** please open an issue first so we can agree on the approach before you spend time on it.
 - **Security problems:** see [SECURITY.md](SECURITY.md) — don't open a public issue.
 
