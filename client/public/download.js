@@ -8,8 +8,10 @@ var currentSSE = null;
 var qrImg = document.getElementById('qr-code');
 var qrFigure = document.getElementById('qr-figure');
 
+var keyCard = document.getElementById('key-card');
 var keyDisplay = document.getElementById('key-display');
 var refreshBtn = document.getElementById('refresh-btn');
+var statusRow = document.getElementById('status-row');
 var statusDot = document.getElementById('status-dot');
 var statusLabel = document.getElementById('status-label');
 var downloadCard = document.getElementById('download-card');
@@ -26,6 +28,13 @@ function setStatus(state, label) {
   statusDot.className =
     'dot' + (state === 'active' ? ' dot-active' : state === 'waiting' ? ' dot-waiting' : ' hidden');
   statusLabel.textContent = label;
+  if (statusRow) {
+    if (label) {
+      statusRow.classList.remove('hidden');
+    } else {
+      statusRow.classList.add('hidden');
+    }
+  }
 }
 
 function showError(msg) {
@@ -101,7 +110,7 @@ function startSSE(key) {
   es.addEventListener('expired', function () {
     stopSSE();
     stopPolling();
-    hideQR();
+    hideQR(true);
     currentKey = null;
     renderDownloads([], []);
     setStatus('idle', '');
@@ -273,11 +282,12 @@ function poll() {
       handleStatusPayload(data);
     } else if (xhr.status === 0) {
       stopPolling();
+      hideQR(true);
       showError('Could not reach the server.');
       setStatus('idle', '');
     } else {
       stopPolling();
-      hideQR();
+      hideQR(true);
       currentKey = null;
       renderDownloads([], []);
       setStatus('idle', '');
@@ -291,7 +301,10 @@ function requestKey() {
   stopPolling();
   stopSSE();
   hideError();
-  hideQR();
+  if (keyCard) {
+    keyCard.classList.remove('is-no-qr');
+  }
+  hideQR(false);
   var abandonKey = currentKey;
   currentKey = null;
   keyDisplay.textContent = '\u2013\u2013\u2013\u2013';
@@ -316,6 +329,7 @@ function requestKey() {
       try {
         data = JSON.parse(xhr.responseText);
       } catch (_) {
+        hideQR(true);
         showError('Unexpected server response.');
         setStatus('idle', '');
         return;
@@ -328,6 +342,7 @@ function requestKey() {
       updateQR(key);
       startSSE(key);
     } else {
+      hideQR(true);
       showError(xhr.responseText || 'Could not reach the server. Is it running?');
       setStatus('idle', '');
     }
@@ -336,6 +351,9 @@ function requestKey() {
 }
 
 function updateQR(key) {
+  if (keyCard) {
+    keyCard.classList.remove('is-no-qr');
+  }
   if (!qrImg || !qrFigure) {
     return;
   }
@@ -347,7 +365,10 @@ function updateQR(key) {
   }
 }
 
-function hideQR() {
+function hideQR(collapse) {
+  if (collapse && keyCard) {
+    keyCard.classList.add('is-no-qr');
+  }
   if (qrFigure) {
     qrFigure.style.visibility = 'hidden';
   }

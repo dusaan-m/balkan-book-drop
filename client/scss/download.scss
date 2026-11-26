@@ -11,9 +11,10 @@
 
 .key-value {
   font-family: t.$font-mono;
-  font-size: 3.75rem;
+  font-size: 3.4rem;
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.25em;
+  padding-left: 0.25em;
   line-height: 1;
   -webkit-user-select: all;
   user-select: all;
@@ -22,15 +23,18 @@
 .btn-icon {
   @include m.btn-icon-base;
   @include m.theme-prop(color, 'text');
-  transition: background t.$duration;
+  transition:
+    background t.$duration,
+    border-color t.$duration,
+    color t.$duration;
 
-  &:hover {
+  &:hover:not(:disabled) {
     @include m.theme-prop(border-color, 'accent');
     @include m.theme-prop(color, 'accent');
   }
 
   &:active:not(:disabled) {
-    @include m.theme-prop(background, 'bg');
+    @include m.theme-prop(background, 'surface-subtle');
   }
 
   &:disabled {
@@ -42,11 +46,16 @@
 .status-row {
   @include m.flex;
   @include m.webkit(align-items, center);
-  @include m.webkit(justify-content, flex-start);
+  @include m.webkit(justify-content, center);
   @include m.flex-gap-row(0.5rem);
   font-size: t.$font-sm;
   @include m.theme-prop(color, 'text-muted');
-  padding-bottom: 0.5rem;
+  margin-top: 0.85rem;
+  padding-bottom: 0;
+
+  .dot.hidden + #status-label {
+    margin-left: 0;
+  }
 }
 
 .dot {
@@ -100,14 +109,17 @@
   @include m.flex;
   @include m.webkit(align-items, center);
   @include m.flex-gap-row(0.75rem);
+  min-height: 3.1rem;
   padding: 0.75rem 1rem;
-  @include m.theme-prop(background, 'bg');
+  @include m.theme-prop(background, 'surface-subtle');
   @include m.theme-border('border');
   border-radius: t.$radius-sm;
   text-decoration: none;
   @include m.theme-prop(color, 'text');
   font-size: t.$font-base;
-  word-break: break-all;
+  font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 
   &:hover {
     @include m.theme-prop(border-color, 'accent');
@@ -121,7 +133,7 @@
 
   svg {
     @include m.webkit(flex-shrink, 0);
-    opacity: 0.5;
+    opacity: 0.55;
     width: 1.1rem;
     height: 1.1rem;
   }
@@ -141,6 +153,10 @@
     &:hover {
       border-color: transparent;
     }
+
+    &:focus-visible {
+      outline-offset: -2px;
+    }
   }
 }
 
@@ -155,15 +171,17 @@
   @include m.webkit(align-items, center);
   @include m.webkit(justify-content, center);
   @include m.webkit(flex-shrink, 0);
-  width: 2.75rem;
+  width: 3rem;
   border: none;
   @include m.theme-border('border', 1px, solid, 'left');
-  background: transparent;
+  @include m.theme-prop(background, 'surface-subtle');
   @include m.theme-prop(color, 'text-muted');
   padding: 0;
-  transition: background t.$duration;
+  transition:
+    background t.$duration,
+    color t.$duration;
 
-  &:hover {
+  &:hover:not(:disabled) {
     @include m.theme-prop(background, 'error-bg');
     @include m.theme-prop(color, 'error-text');
     @include m.theme-prop(border-color, 'error-border');
@@ -179,6 +197,10 @@
     cursor: not-allowed;
   }
 
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+
   svg {
     width: 1rem;
     height: 1rem;
@@ -188,19 +210,40 @@
 }
 
 .metadata-diff {
-  padding: 0.6rem 1rem 0.75rem;
+  padding: 0.65rem 1rem 0.75rem;
   @include m.theme-border('border', 1px, solid, 'top');
-  @include m.theme-prop(background, 'bg');
+  @include m.theme-prop(background, 'surface-subtle');
   @include m.flex(column);
   @include m.flex-gap-col(0.35rem);
 }
 
+// Fallback for browsers without CSS grid (e.g. older e-readers).
 .metadata-diff-row {
-  display: grid;
-  grid-template-columns: 6rem 1fr auto 1fr;
-  gap: 0.4rem;
-  align-items: baseline;
+  @include m.flex;
+  @include m.webkit(flex-wrap, wrap);
+  @include m.webkit(align-items, baseline);
+  @include m.flex-gap-row(0.4rem);
   font-size: t.$font-sm;
+}
+
+@supports (display: grid) {
+  .metadata-diff-row {
+    display: grid;
+    grid-template-columns: 6rem 1fr auto 1fr;
+    gap: 0.4rem;
+    align-items: baseline;
+  }
+
+  @include m.breakpoint('sm') {
+    .metadata-diff-row {
+      grid-template-columns: 1fr;
+      gap: 0.15rem;
+    }
+
+    .metadata-arrow {
+      display: none;
+    }
+  }
 }
 
 .metadata-field {
@@ -227,24 +270,30 @@
 .key-card-inner {
   @include m.flex;
   @include m.webkit(align-items, center);
-  @include m.webkit(justify-content, space-between);
+  @include m.flex-gap-row(1.5rem);
 }
 
 .key-card-right {
+  @include m.webkit(flex, 1 1 0%);
   min-width: 0;
+  text-align: center;
 }
 
-#qr-figure {
+#qr-figure,
+.qr-frame {
   @include m.webkit(flex-shrink, 0);
   margin: 0;
-  padding: 0;
+  padding: 0.55rem;
+  background: #ffffff;
+  @include m.theme-border('border');
+  border-radius: t.$radius;
   visibility: hidden;
 
   img {
     display: block;
     width: 160px;
     height: 160px;
-    border-radius: t.$radius-sm;
+    border-radius: 4px;
   }
 }
 
@@ -252,11 +301,25 @@
   border: none;
   visibility: hidden;
   width: 1px;
-  height: 128px; // 80% of 160px QR height
+  height: 136px;
   @include m.theme-prop(background, 'border');
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 0;
   @include m.webkit(flex-shrink, 0);
   @include m.webkit(align-self, center);
+}
+
+#key-card.is-no-qr {
+  #qr-figure,
+  .key-card-divider {
+    display: none;
+  }
+
+  .key-card-right {
+    margin-left: 0;
+    margin-top: 0;
+  }
 }
 
 .error-msg {
@@ -269,21 +332,62 @@
 @include m.breakpoint('md') {
   .key-card-inner {
     @include m.webkit(flex-direction, column);
-    @include m.webkit(align-items, stretch);
+    @include m.webkit(align-items, center);
+    @include m.flex-gap-row(0);
     @include m.flex-gap-col(1rem);
+  }
+
+  .key-card-right {
+    width: 100%;
   }
 
   .key-card-divider {
     width: 80%;
     height: 1px;
+    margin-left: 0;
     @include m.webkit(align-self, center);
-  }
-
-  #qr-figure img {
-    margin: 0 auto;
   }
 
   .status-row {
     @include m.webkit(justify-content, center);
+  }
+}
+
+@include m.breakpoint('sm') {
+  .key-value {
+    font-size: 2.6rem;
+    letter-spacing: 0.2em;
+    padding-left: 0.2em;
+  }
+}
+
+html.ereader {
+  .btn-icon,
+  .download-entry,
+  .download-item,
+  #qr-figure {
+    @include m.theme-prop(border-color, 'border', t.$ereader);
+  }
+
+  .btn-delete {
+    @include m.theme-prop(border-left-color, 'border', t.$ereader);
+  }
+
+  .key-card-divider {
+    @include m.theme-prop(background, 'border', t.$ereader);
+  }
+
+  .status-row {
+    @include m.theme-prop(color, 'text-muted', t.$ereader);
+  }
+
+  .dot.dot-active {
+    @include m.theme-prop(background, 'dot-active', t.$ereader);
+    box-shadow: none;
+  }
+
+  .dot.dot-waiting {
+    @include m.theme-prop(background, 'dot-waiting', t.$ereader);
+    box-shadow: none;
   }
 }
