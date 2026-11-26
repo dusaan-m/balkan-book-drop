@@ -84,11 +84,11 @@
         );
       })();
     </script>
-    <script src="theme.js" defer></script>
-    <script src="howto.js" defer></script>
-    <link rel="preload" href="base.css" as="style" />
-    <link rel="stylesheet" href="base.css" />
-    <link rel="stylesheet" href="upload.css" />
+    <script src="theme.js?v=ASSET_HASH_PLACEHOLDER" defer></script>
+    <script src="howto.js?v=ASSET_HASH_PLACEHOLDER" defer></script>
+    <link rel="preload" href="base.css?v=ASSET_HASH_PLACEHOLDER" as="style" />
+    <link rel="stylesheet" href="base.css?v=ASSET_HASH_PLACEHOLDER" />
+    <link rel="stylesheet" href="upload.css?v=ASSET_HASH_PLACEHOLDER" />
   </head>
   <body>
     <main class="wrapper">
@@ -745,9 +745,13 @@
       </div>
     </dialog>
 
-    <script src="archive.js" nonce="NONCE_PLACEHOLDER" defer></script>
-    <script src="balkandownload.js" nonce="NONCE_PLACEHOLDER" defer></script>
-    <script src="upload.js" nonce="NONCE_PLACEHOLDER" defer></script>
+    <script src="archive.js?v=ASSET_HASH_PLACEHOLDER" nonce="NONCE_PLACEHOLDER" defer></script>
+    <script
+      src="balkandownload.js?v=ASSET_HASH_PLACEHOLDER"
+      nonce="NONCE_PLACEHOLDER"
+      defer
+    ></script>
+    <script src="upload.js?v=ASSET_HASH_PLACEHOLDER" nonce="NONCE_PLACEHOLDER" defer></script>
     <script nonce="NONCE_PLACEHOLDER">
       window.addEventListener('load', function () {
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

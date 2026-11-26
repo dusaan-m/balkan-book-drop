@@ -858,6 +858,31 @@ details#history {
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+html:has(dialog[open]) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.dialog-scroll-lock {
+  overflow: hidden;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body.dialog-scroll-lock {
+  position: fixed;
+  top: var(--scroll-lock-top, 0px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .dialog-header {
   display: flex;
   align-items: flex-start;
@@ -905,6 +930,8 @@ details#history {
   border: none;
   background: transparent;
   overflow: visible;
+  overscroll-behavior: contain;
+  touch-action: pinch-zoom;
   max-width: min(500px, calc(100vw - 2rem));
   width: 100%;
 
@@ -920,7 +947,11 @@ details#history {
 .howto-form {
   position: relative;
   max-height: min(85vh, 640px);
+  max-height: min(85dvh, 640px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
   @include m.theme-prop(background, 'surface');
   @include m.theme-prop(color, 'text');
   @include m.theme-border('border');
@@ -978,6 +1009,8 @@ details#history {
   border: none;
   background: transparent;
   overflow: visible;
+  overscroll-behavior: contain;
+  touch-action: pinch-zoom;
   max-width: min(560px, calc(100vw - 2rem));
   width: 100%;
 
@@ -1062,6 +1095,9 @@ details#history {
   flex-direction: column;
   gap: 0.4rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
   min-height: 0;
   flex: 1 1 auto;
 
@@ -1276,6 +1312,8 @@ details#history {
   border: none;
   background: transparent;
   overflow: visible;
+  overscroll-behavior: contain;
+  touch-action: pinch-zoom;
   max-width: min(660px, calc(100vw - 1.5rem));
   width: 100%;
 
@@ -1293,7 +1331,9 @@ details#history {
   display: flex;
   flex-direction: column;
   height: min(85vh, 680px);
+  height: min(85dvh, 680px);
   max-height: min(85vh, 680px);
+  max-height: min(85dvh, 680px);
   @include m.theme-prop(background, 'surface');
   @include m.theme-prop(color, 'text');
   @include m.theme-border('border');
@@ -1377,10 +1417,12 @@ details#history {
 .bd-search-input {
   flex: 1 1 auto;
   min-width: 0;
+  touch-action: pan-x pinch-zoom;
 }
 
 .bd-book-filter {
   width: 100%;
+  touch-action: pan-x pinch-zoom;
 }
 
 .bd-filter-group {
@@ -1440,6 +1482,9 @@ details#history {
   flex-direction: column;
   gap: 0.45rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
   min-height: 0;
   flex: 1 1 auto;
 
@@ -1751,7 +1796,9 @@ details#history {
   .bd-dialog-panel {
     padding: 1.1rem 0.95rem 0.95rem;
     height: 90vh;
+    height: 90dvh;
     max-height: 90vh;
+    max-height: 90dvh;
   }
 
   .bd-search-controls {

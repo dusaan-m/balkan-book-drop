@@ -1482,3 +1482,109 @@ test('extracts 4-character key when pasting a URL or labeled key into keyinput',
   await expect(page.locator('#keyinput')).toHaveValue('WXYZ');
   await expect(page.locator('#key-status')).toHaveText('Connected · Kindle');
 });
+
+test('does not scroll the background page while the BalkanDownload dialog is open', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 600 });
+  await page.route('/', async (route) => {
+    const res = await route.fetch();
+    const html = (await res.text()).replace(
+      '<meta name="balkandownload-enabled" content="0" />',
+      '<meta name="balkandownload-enabled" content="1" />'
+    );
+    await route.fulfill({ response: res, body: html });
+  });
+  await page.route('/api/balkandownload/status', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        syncing: false,
+        topicCount: 42,
+        lastSyncedAt: Date.now(),
+        lastError: null,
+        forums: [],
+      },
+    })
+  );
+  await page.route('/api/balkandownload/search?*', (route) =>
+    route.fulfill({
+      json: {
+        query: 'author',
+        section: 'all',
+        total: 30,
+        topicCount: 42,
+        syncing: false,
+        lastSyncedAt: Date.now(),
+        lastError: null,
+        results: Array.from({ length: 30 }, (_, i) => ({
+          topicId: i + 1,
+          title: `Author ${i + 1}`,
+          section: 'domace',
+          forumId: 35,
+          forumLabel: 'Domaće',
+          url: `https://www.balkandownload.org/topic/${i + 1}-author/`,
+        })),
+      },
+    })
+  );
+
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, 120));
+  await page.locator('#bd-launcher-input').fill('author');
+  await page.locator('#bd-launcher-form button[type="submit"]').click();
+  await expect(page.locator('#bd-dialog')).toBeVisible();
+  await expect(page.locator('#bd-topic-list .bd-topic-item')).toHaveCount(30);
+  await expect(page.locator('html')).toHaveClass(/\bdialog-scroll-lock\b/);
+  await expect(page.locator('body')).toHaveClass(/\bdialog-scroll-lock\b/);
+
+  await page.mouse.move(10, 10);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+  const touchBlocked = await page.evaluate(() => {
+    const check = (selector: string, dy: number) => {
+      const el = document.querySelector(selector)!;
+      const rect = el.getBoundingClientRect();
+      const x = selector === '#bd-dialog' ? 5 : rect.left + rect.width / 2;
+      const y = selector === '#bd-dialog' ? 5 : rect.top + rect.height / 2;
+      const t1 = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      el.dispatchEvent(
+        new TouchEvent('touchstart', {
+          touches: [t1],
+          targetTouches: [t1],
+          changedTouches: [t1],
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+      const t2 = new Touch({ identifier: 1, target: el, clientX: x, clientY: y + dy });
+      const ev = new TouchEvent('touchmove', {
+        touches: [t2],
+        targetTouches: [t2],
+        changedTouches: [t2],
+        bubbles: true,
+        cancelable: true,
+      });
+      el.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    };
+    return {
+      backdrop: check('#bd-dialog', -50),
+      header: check('.bd-dialog-header', 50),
+      listTopDown: check('#bd-topic-list', 50),
+      listTopUp: check('#bd-topic-list', -50),
+    };
+  });
+  expect(touchBlocked).toEqual({
+    backdrop: true,
+    header: true,
+    listTopDown: true,
+    listTopUp: false,
+  });
+
+  await page.locator('#bd-close').click();
+  await expect(page.locator('#bd-dialog')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/\bdialog-scroll-lock\b/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
+});

@@ -278,7 +278,7 @@
       }
       stepBooks.classList.add('hidden');
       stepSearch.classList.remove('hidden');
-      searchInput.focus();
+      searchInput.focus({ preventScroll: true });
     }
 
     function formatTopicBadge(topic) {

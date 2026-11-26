@@ -1873,3 +1873,126 @@ renderHistory();
   input.value = shared;
   updateSubmitState();
 })();
+
+// Lock background page scroll (desktop + iOS/Android touch) while any modal dialog is open.
+(function () {
+  let lockedScrollY = 0;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let lastTouchY = 0;
+
+  function findScrollableAncestor(target, boundary) {
+    let el = target instanceof Element ? target : (target?.parentElement ?? null);
+    while (el && el !== boundary) {
+      const overflowY = window.getComputedStyle(el).overflowY;
+      if (
+        (overflowY === 'auto' || overflowY === 'scroll') &&
+        el.scrollHeight > el.clientHeight + 1
+      ) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function handleTouchStart(e) {
+    if (e.touches.length !== 1) {
+      return;
+    }
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    lastTouchY = touchStartY;
+  }
+
+  function handleTouchMove(e) {
+    if (e.touches.length !== 1) {
+      return;
+    }
+    const openDialog = document.querySelector('dialog[open]');
+    if (!openDialog) {
+      return;
+    }
+    const touch = e.touches[0];
+    const totalDx = touch.clientX - touchStartX;
+    const totalDy = touch.clientY - touchStartY;
+    const dy = touch.clientY - lastTouchY;
+    lastTouchY = touch.clientY;
+
+    const target = e.target instanceof Element ? e.target : null;
+    if (target && target.closest('input, textarea') && Math.abs(totalDx) > Math.abs(totalDy)) {
+      return;
+    }
+
+    const scroller =
+      target && openDialog.contains(target) ? findScrollableAncestor(target, openDialog) : null;
+
+    if (!scroller) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      return;
+    }
+
+    const atTop = scroller.scrollTop <= 0;
+    const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    if ((dy > 0 && atTop) || (dy < 0 && atBottom)) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    }
+  }
+
+  function handleWheel(e) {
+    const openDialog = document.querySelector('dialog[open]');
+    if (!openDialog) {
+      return;
+    }
+    const target = e.target instanceof Element ? e.target : null;
+    const scroller =
+      target && openDialog.contains(target) ? findScrollableAncestor(target, openDialog) : null;
+
+    if (!scroller) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      return;
+    }
+
+    const atTop = scroller.scrollTop <= 0;
+    const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+    }
+  }
+
+  function syncDialogScrollLock() {
+    const hasOpenDialog = Boolean(document.querySelector('dialog[open]'));
+    const isLocked = document.body.classList.contains('dialog-scroll-lock');
+    if (hasOpenDialog && !isLocked) {
+      lockedScrollY = window.scrollY;
+      document.body.style.setProperty('--scroll-lock-top', `-${lockedScrollY}px`);
+      document.documentElement.classList.add('dialog-scroll-lock');
+      document.body.classList.add('dialog-scroll-lock');
+      document.addEventListener('touchstart', handleTouchStart, { passive: true });
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('wheel', handleWheel, { passive: false });
+    } else if (!hasOpenDialog && isLocked) {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('wheel', handleWheel);
+      document.documentElement.classList.remove('dialog-scroll-lock');
+      document.body.classList.remove('dialog-scroll-lock');
+      document.body.style.removeProperty('--scroll-lock-top');
+      window.scrollTo(0, lockedScrollY);
+    }
+  }
+
+  const observer = new MutationObserver(syncDialogScrollLock);
+  for (const dlg of document.querySelectorAll('dialog')) {
+    observer.observe(dlg, { attributes: true, attributeFilter: ['open'] });
+  }
+  syncDialogScrollLock();
+})();

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import type { IncomingMessage } from 'node:http';
 import express from 'express';
 import compression from 'compression';
@@ -18,6 +19,31 @@ import type { BalkanDownloadService } from './balkandownload/service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const VERSIONED_ASSETS = [
+  'base.css',
+  'upload.css',
+  'download.css',
+  'theme.js',
+  'howto.js',
+  'archive.js',
+  'balkandownload.js',
+  'upload.js',
+  'download.js',
+];
+
+function computeAssetVersion(staticDir: string): string {
+  const hash = crypto.createHash('sha256');
+  for (const asset of VERSIONED_ASSETS) {
+    try {
+      hash.update(asset);
+      hash.update(fs.readFileSync(path.join(staticDir, asset)));
+    } catch {
+      // Test fixtures may run against a minimal or empty staticDir.
+    }
+  }
+  return hash.digest('hex').slice(0, 10);
+}
+
 export function createApp(options?: {
   staticDir?: string;
   viewsDir?: string;
@@ -25,6 +51,7 @@ export function createApp(options?: {
 }) {
   const STATIC_DIR = options?.staticDir ?? path.join(__dirname, '../client/public');
   const VIEWS_DIR = options?.viewsDir ?? path.join(__dirname, '../client/views');
+  const assetVersion = computeAssetVersion(STATIC_DIR);
   const keys = new Map<string, KeyInfo>();
   const sseClients = new Map<string, express.Response>();
   const app = express();
@@ -100,7 +127,13 @@ export function createApp(options?: {
     next();
   });
 
-  app.use(express.static(STATIC_DIR));
+  app.use(
+    express.static(STATIC_DIR, {
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-cache');
+      },
+    })
+  );
 
   app.use((req, res, next) => {
     const start = Date.now();
@@ -158,6 +191,7 @@ export function createApp(options?: {
           MAX_FILE_SIZE_LABEL_PLACEHOLDER: formatLimit(MAX_FILE_SIZE),
           MAX_FILES_PER_KEY_PLACEHOLDER: String(MAX_FILES_PER_KEY),
           VERSION_PLACEHOLDER: BOOKDROP_VERSION,
+          ASSET_HASH_PLACEHOLDER: assetVersion,
           BALKANDOWNLOAD_ENABLED_PLACEHOLDER: options?.balkanDownload ? '1' : '0',
         };
     void serveHtml(VIEWS_DIR, page, nonceMap.get(req) ?? '', res, next, extras);
