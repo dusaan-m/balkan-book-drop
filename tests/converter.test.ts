@@ -90,7 +90,7 @@ exit 2
 });
 
 describe('convertWithKindling', () => {
-  it("writes a MOBI beside the upload, running kindling with BookDrop's options but not its secrets", async () => {
+  it("writes a MOBI beside the upload, running kindling with Balkan BookDrop's options but not its secrets", async () => {
     const { uploadDir, input } = await stageUpload();
     const argsFile = path.join(uploadDir, '..', `${path.basename(uploadDir)}-args`);
     const envFile = `${argsFile}-env`;

@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for BookDrop
+description: Suggest an idea for Balkan BookDrop
 labels: [enhancement]
 body:
   - type: textarea

@@ -30,7 +30,7 @@ async function bookWithoutCoverOrLanguage() {
 <package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="bookid">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>Integration Test Book</dc:title>
-    <dc:creator>BookDrop</dc:creator>
+    <dc:creator>Balkan BookDrop</dc:creator>
     <dc:identifier id="bookid">urn:uuid:5f0c1d2e-3a4b-4c5d-8e6f-7a8b9c0d1e2f</dc:identifier>
   </metadata>
   <manifest>

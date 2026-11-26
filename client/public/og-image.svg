@@ -26,7 +26,7 @@
     <rect x="84" y="8" width="10" height="96" rx="3" fill="#2563eb" opacity="0.6"/>
   </g>
 
-  <!-- Dule BookDrop wordmark -->
+  <!-- Balkan BookDrop wordmark -->
   <text
     x="600"
     y="336"
@@ -36,7 +36,7 @@
     fill="#fafaf9"
     text-anchor="middle"
     letter-spacing="-2"
-  >Dule BookDrop</text>
+  >Balkan BookDrop</text>
 
   <!-- Tagline -->
   <text

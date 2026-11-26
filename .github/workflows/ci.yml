@@ -92,14 +92,14 @@ jobs:
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             cache_to=(--cache-to "type=registry,ref=$CACHE,mode=max")
           fi
-          docker buildx build --load -t book-drop:ci \
+          docker buildx build --load -t balkan-book-drop:ci \
             --build-arg "BOOKDROP_VERSION=${GITHUB_SHA::7}" \
             --cache-from "type=registry,ref=$CACHE" "${cache_to[@]}" .
       - name: Smoke-test the image
         run: |
           # Same hardening as docker-compose.yaml.
-          docker run -d --name book-drop -p 3001:3001 --init --cap-drop ALL \
-            --security-opt no-new-privileges:true --pids-limit 256 book-drop:ci
+          docker run -d --name balkan-book-drop -p 3001:3001 --init --cap-drop ALL \
+            --security-opt no-new-privileges:true --pids-limit 256 balkan-book-drop:ci
           for _ in $(seq 30); do
             curl -fsS http://localhost:3001/health && break
             sleep 2
@@ -124,7 +124,7 @@ jobs:
         # The suite skips kindling if it can't find it, so check first that the image has it.
         run: |
           docker run --rm --init --cap-drop ALL --security-opt no-new-privileges:true \
-            --pids-limit 256 -v "$PWD/tests:/usr/src/app/tests:ro" book-drop:ci sh -c \
+            --pids-limit 256 -v "$PWD/tests:/usr/src/app/tests:ro" balkan-book-drop:ci sh -c \
             'kindling-cli --version && node --test tests/integration/'
       - name: Publish the tested image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -133,10 +133,10 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository }}
         run: |
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          docker tag book-drop:ci "$IMAGE:$GITHUB_SHA"
+          docker tag balkan-book-drop:ci "$IMAGE:$GITHUB_SHA"
           docker push "$IMAGE:$GITHUB_SHA"
       - if: failure()
-        run: docker logs book-drop
+        run: docker logs balkan-book-drop
 
   workflows:
     runs-on: ubuntu-latest

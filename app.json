@@ -1,6 +1,8 @@
 {
-  "name": "Dule BookDrop",
-  "description": "Send ebooks to Kobo, Kindle, or Tolino ereaders easily through their built-in browser.",
+  "name": "Balkan BookDrop",
+  "description": "Send ebooks to Kobo, Kindle, or Tolino e-readers through their built-in browser, with archive picking and built-in BalkanDownload search.",
+  "repository": "https://github.com/dusaan-m/custom-book-drop",
+  "website": "https://github.com/dusaan-m/custom-book-drop",
   "stack": "container",
   "formation": {
     "web": {

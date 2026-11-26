@@ -155,7 +155,7 @@ const OPTIONS = [
   },
 ];
 
-const BUG_REPORT_URL = 'https://github.com/eitan12345om/book-drop/issues/new';
+const BUG_REPORT_URL = 'https://github.com/dusaan-m/custom-book-drop/issues/new';
 const appVersion = document.getElementById('app-version')?.textContent ?? 'unknown';
 
 let detectedDevice = null;
@@ -771,9 +771,7 @@ function openZipDialog({
   const parts = [`${archiveLabel} \u2014 ${foundLabel}`];
   if (skippedCount > 0) {
     parts.push(
-      skippedCount === 1
-        ? '1 unsupported file hidden'
-        : `${skippedCount} unsupported files hidden`
+      skippedCount === 1 ? '1 unsupported file hidden' : `${skippedCount} unsupported files hidden`
     );
   }
   zipSubtitle.textContent = parts.join(' \u00b7 ');
@@ -1252,7 +1250,7 @@ function bugReportUrl({ file, message, ref }) {
     error: `${message}\nReference: ${ref}`,
     time: new Date().toISOString(),
     'device-file': `${detectedDevice ?? 'Unknown e-reader'}; ${fileSummary}`,
-    install: `${window.location.hostname === 'bookdrop.cc' ? 'bookdrop.cc' : 'Self-hosted'}, version ${appVersion}`,
+    install: `Self-hosted, version ${appVersion}`,
   });
   return `${BUG_REPORT_URL}?${params}`;
 }

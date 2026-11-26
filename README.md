@@ -1,8 +1,8 @@
-# Dule BookDrop
+# Balkan BookDrop
 
-A self-hostable web service for sending ebooks to a Kobo, Kindle, or Tolino through its built-in browser — no account, no cloud, no cables.
+A custom self-hosted web service for sending ebooks to a Kobo, Kindle, or Tolino through its built-in browser — no account, no cloud, no cables — with browser archive picking and built-in BalkanDownload.org search.
 
-Live at [bookdrop.cc](https://bookdrop.cc) · Forked from [send2ereader](https://github.com/daniel-j/send2ereader) by [djazz](https://github.com/daniel-j)
+Custom fork of [BookDrop](https://github.com/eitan12345om/book-drop) by [eitan12345om](https://github.com/eitan12345om) · Originally forked from [send2ereader](https://github.com/daniel-j/send2ereader) by [djazz](https://github.com/daniel-j)
 
 ## How it works
 
@@ -118,6 +118,25 @@ docker compose up -d
 The service will be available at `http://localhost:3001` (or whatever PORT you use).
 
 Serving plain HTTP (no reverse-proxy TLS)? Set `DISABLE_HSTS=1` — see env vars above.
+
+### Expose on your own domain with Cloudflare Tunnel (free)
+
+1. In **Cloudflare Zero Trust** (`one.dash.cloudflare.com`) → **Networks** → **Tunnels**, click **Create a tunnel** → **Cloudflared** and copy the tunnel token.
+2. Add a **Public Hostname** route pointing your subdomain (e.g. `books.example.com`) to service type **HTTP** and URL `balkan-book-drop:3001`.
+3. Add these lines to `.env` (and comment out `DISABLE_HSTS=1` if you want HSTS enabled over HTTPS):
+
+```env
+COMPOSE_PROFILES=tunnel
+CLOUDFLARE_TUNNEL_TOKEN=your-tunnel-token-here
+```
+
+4. Start both the app and the tunnel together:
+
+```sh
+docker compose up -d --build
+```
+
+Because both containers use `restart: unless-stopped`, they also come back up automatically when Docker starts. Stop both anytime with `docker compose down`.
 
 ## Heroku
 

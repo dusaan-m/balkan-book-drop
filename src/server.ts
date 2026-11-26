@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   });
 
   server.listen(PORT, () => {
-    logger.info({ port: PORT }, `book-drop listening on http://localhost:${PORT}`);
+    logger.info({ port: PORT }, `balkan-book-drop listening on http://localhost:${PORT}`);
   });
 }
 

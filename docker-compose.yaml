@@ -1,9 +1,9 @@
 services:
-  book-drop:
+  balkan-book-drop:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: book-drop
+    container_name: balkan-book-drop
     restart: unless-stopped
     ports:
       - '${PORT:-3001}:${PORT:-3001}'
@@ -27,6 +27,27 @@ services:
       - PORT
     volumes:
       - balkandownload-data:/usr/src/app/data
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: balkan-book-drop-tunnel
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      balkan-book-drop:
+        condition: service_healthy
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
 
 volumes:
   balkandownload-data:

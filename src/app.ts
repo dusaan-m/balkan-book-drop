@@ -91,7 +91,7 @@ export function createApp(options?: {
         .status(400)
         .type('text')
         .send(
-          'Book-Drop is configured to use HSTS, but you connected over HTTP. Either connect over HTTPS or set environment variable "DISABLE_HSTS=1" to disable.'
+          'Balkan BookDrop is configured to use HSTS, but you connected over HTTP. Either connect over HTTPS or set environment variable "DISABLE_HSTS=1" to disable.'
         );
 
       return;

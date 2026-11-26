@@ -1,14 +1,14 @@
 {
-  "name": "book-drop",
+  "name": "balkan-book-drop",
   "version": "1.0.0",
-  "description": "Send ebooks to Kobo/Kindle ereaders easily",
-  "homepage": "https://bookdrop.cc",
+  "description": "Self-hosted web service to send ebooks to Kobo, Kindle, or Tolino e-readers, with archive picking and built-in BalkanDownload search",
+  "homepage": "https://github.com/dusaan-m/custom-book-drop",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eitan12345om/book-drop.git"
+    "url": "git+https://github.com/dusaan-m/custom-book-drop.git"
   },
   "bugs": {
-    "url": "https://github.com/eitan12345om/book-drop/issues"
+    "url": "https://github.com/dusaan-m/custom-book-drop/issues"
   },
   "keywords": [
     "ebook",
@@ -20,7 +20,10 @@
     "epub",
     "mobi",
     "azw3",
-    "pdf"
+    "pdf",
+    "bookdrop",
+    "balkandownload",
+    "self-hosted"
   ],
   "engines": {
     "node": ">=26"
@@ -52,6 +55,10 @@
     "*.{html,css,scss,json,md}": [
       "prettier --write"
     ]
+  },
+  "author": {
+    "name": "Dusan Milivojevic",
+    "url": "https://github.com/dusaan-m"
   },
   "contributors": [
     {

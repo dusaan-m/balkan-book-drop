@@ -14,7 +14,7 @@ body:
     attributes:
       label: Error message
       description: >-
-        The exact error BookDrop showed, including its reference if it gave one
+        The exact error Balkan BookDrop showed, including its reference if it gave one
         (e.g. "Reference: 7F3A9C21"). The "Report this problem" link fills this in for you.
       render: text
   - type: input
@@ -42,11 +42,11 @@ body:
   - type: input
     id: install
     attributes:
-      label: Where are you running BookDrop, and which version?
+      label: Where are you running Balkan BookDrop, and which version?
       description: >-
-        bookdrop.cc, or self-hosted with Docker or Node.js. The version is shown at the bottom of
+        Self-hosted with Docker, Heroku, or Node.js. The version is shown at the bottom of
         the page.
-      placeholder: bookdrop.cc, version a1b2c3d
+      placeholder: Self-hosted (Docker), version a1b2c3d
     validations:
       required: true
   - type: textarea
