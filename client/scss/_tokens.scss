@@ -1,19 +1,24 @@
 $light: (
-  'bg': #f5f4f1,
+  'bg': #f5f4f0,
   'surface': #ffffff,
-  'border': #e2ddd8,
+  'surface-subtle': #faf9f6,
+  'border': #e2ded6,
+  'border-strong': #c9c3b8,
   'text': #1c1917,
-  'text-muted': #6f6862,
+  'text-muted': #5e5852,
   'accent': #2563eb,
   'accent-hover': #1d4ed8,
-  'accent-subtle': rgba(37, 99, 235, 0.04),
-  'accent-glow': rgba(37, 99, 235, 0.12),
+  'accent-subtle': rgba(37, 99, 235, 0.06),
+  'accent-glow': rgba(37, 99, 235, 0.14),
   'button-bg': #2563eb,
   'button-bg-hover': #1d4ed8,
-  'dot-active': #22c55e,
-  'dot-active-glow': rgba(34, 197, 94, 0.2),
-  'dot-waiting': #f59e0b,
-  'dot-waiting-glow': rgba(245, 158, 11, 0.2),
+  'button-disabled-bg': #e5e1d8,
+  'button-disabled-text': #5e5852,
+  'backdrop': rgba(28, 25, 23, 0.45),
+  'dot-active': #16a34a,
+  'dot-active-glow': rgba(22, 163, 74, 0.2),
+  'dot-waiting': #d97706,
+  'dot-waiting-glow': rgba(217, 119, 6, 0.2),
   'success-bg': #f0fdf4,
   'success-border': #86efac,
   'success-text': #166534,
@@ -26,64 +31,77 @@ $light: (
 );
 
 $dark: (
-  'bg': #0c0a09,
-  'surface': #1c1917,
-  'border': #44403c,
-  'text': #fafaf9,
+  'bg': #0f0e0d,
+  'surface': #1b1917,
+  'surface-subtle': #24211e,
+  'border': #34302c,
+  'border-strong': #4a453f,
+  'text': #f7f6f4,
   'text-muted': #a8a29e,
-  'accent': #3b82f6,
-  'accent-hover': #60a5fa,
-  'accent-subtle': rgba(59, 130, 246, 0.04),
-  'accent-glow': rgba(59, 130, 246, 0.12),
+  'accent': #60a5fa,
+  'accent-hover': #93c5fd,
+  'accent-subtle': rgba(96, 165, 250, 0.1),
+  'accent-glow': rgba(96, 165, 250, 0.2),
   // White button text needs a darker blue than the dark-mode accent (4.5:1)
   'button-bg': #2563eb,
   'button-bg-hover': #1d4ed8,
+  'button-disabled-bg': #282522,
+  'button-disabled-text': #a8a29e,
+  'backdrop': rgba(0, 0, 0, 0.72),
   'dot-active': #22c55e,
-  'dot-active-glow': rgba(34, 197, 94, 0.2),
+  'dot-active-glow': rgba(34, 197, 94, 0.22),
   'dot-waiting': #f59e0b,
-  'dot-waiting-glow': rgba(245, 158, 11, 0.2),
-  'success-bg': #052e16,
+  'dot-waiting-glow': rgba(245, 158, 11, 0.22),
+  'success-bg': #082716,
   'success-border': #166534,
   'success-text': #86efac,
-  'error-bg': #450a0a,
+  'error-bg': #3b0d0d,
   'error-border': #991b1b,
   'error-text': #fca5a5,
-  'warning-bg': #451a03,
+  'warning-bg': #3b1a06,
   'warning-border': #b45309,
   'warning-text': #fde68a,
 );
 
 $ereader: (
+  'bg': #f5f4f0,
+  'surface': #ffffff,
+  'surface-subtle': #f5f5f5,
+  'text': #000000,
+  'text-muted': #333333,
+  'border': #999999,
+  'border-strong': #666666,
   'accent': #000000,
   'accent-hover': #333333,
   'button-bg': #000000,
   'button-bg-hover': #333333,
   'accent-subtle': #eeeeee,
   'accent-glow': transparent,
-  'border': #999999,
-  'text-muted': #333333,
   'dot-active': #000000,
   'dot-active-glow': transparent,
-  'dot-waiting': #888888,
+  'dot-waiting': #666666,
   'dot-waiting-glow': transparent,
 );
 
-$radius-sm: 6px;
+$radius-sm: 8px;
 $radius: 10px;
 $radius-lg: 14px;
 $shadow:
-  0 1px 3px rgba(0, 0, 0, 0.07),
-  0 1px 2px rgba(0, 0, 0, 0.04);
+  0 1px 2px rgba(28, 25, 23, 0.05),
+  0 1px 3px rgba(28, 25, 23, 0.04);
+$shadow-dialog:
+  0 20px 45px rgba(0, 0, 0, 0.2),
+  0 4px 12px rgba(0, 0, 0, 0.08);
 $duration: 0.12s;
 $font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
 
-$font-xs: 0.72rem;
-$font-sm: 0.8rem;
+$font-xs: 0.75rem;
+$font-sm: 0.8125rem;
 $font-base: 0.875rem;
 $font-lg: 1rem;
-$font-xl: 1.6rem;
+$font-xl: 1.375rem;
 
 $breakpoints: (
-  'sm': 480px,
-  'md': 600px,
+  'sm': 520px,
+  'md': 640px,
 );

@@ -71,21 +71,23 @@
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
-// Padding-based centering: (2.75rem button − 1rem icon) / 2 = 0.875rem.
 @mixin btn-icon-base {
   @include inline-flex;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0.875rem;
+  @include webkit(align-items, center);
+  @include webkit(justify-content, center);
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
   @include theme-border('border');
   border-radius: t.$radius-sm;
   @include theme-prop(background, 'surface');
   @include webkit(flex-shrink, 0);
 
   svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.05rem;
+    height: 1.05rem;
     display: block;
+    margin: 0 auto;
   }
 }
 

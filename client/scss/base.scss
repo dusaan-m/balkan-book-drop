@@ -8,18 +8,19 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root:not([data-theme='light']):not(.ereader) {
     color-scheme: dark;
     @include m.token-vars(t.$dark);
   }
 }
 
-[data-theme='dark'] {
+[data-theme='dark']:not(.ereader) {
   color-scheme: dark;
   @include m.token-vars(t.$dark);
 }
 
 html.ereader {
+  color-scheme: light;
   @include m.token-vars(t.$ereader);
 }
 
@@ -45,7 +46,7 @@ body {
   @include m.theme-prop(color, 'text');
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -61,36 +62,77 @@ a {
   }
 }
 
+summary:focus-visible {
+  @include m.focus-ring;
+  border-radius: 4px;
+}
+
 .wrapper {
-  max-width: 640px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 5rem;
+  padding: 1.75rem 1.25rem 3.5rem;
 }
 
 .page-header {
-  position: relative;
-  text-align: center;
-  margin-bottom: 2rem;
+  @include m.flex;
+  @include m.webkit(align-items, center);
+  @include m.webkit(justify-content, space-between);
+  @include m.flex-gap-row(1rem);
+  text-align: left;
+  margin-bottom: 1.35rem;
+  padding-bottom: 1rem;
+  @include m.theme-border('border', 1px, solid, 'bottom');
+
+  .header-brand {
+    @include m.flex;
+    @include m.webkit(align-items, center);
+    @include m.flex-gap-row(0.7rem);
+    min-width: 0;
+  }
+
+  .brand-mark {
+    @include m.inline-flex;
+    @include m.webkit(align-items, center);
+    @include m.webkit(justify-content, center);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: t.$radius;
+    @include m.theme-prop(background, 'surface');
+    @include m.theme-border('border');
+    @include m.theme-prop(color, 'accent');
+    @include m.webkit(flex-shrink, 0);
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      display: block;
+    }
+  }
+
+  .header-brand-text {
+    min-width: 0;
+  }
 
   h1 {
     font-size: t.$font-xl;
     font-weight: 700;
     letter-spacing: -0.02em;
-    margin: 0 0 0.3rem;
+    line-height: 1.2;
+    margin: 0;
   }
 
   p {
     @include m.theme-prop(color, 'text-muted');
-    margin: 0;
-    font-size: 0.9rem;
+    margin: 0.15rem 0 0;
+    font-size: t.$font-sm;
+    line-height: 1.35;
   }
 
   .header-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
     @include m.flex;
-    @include m.flex-gap-row(0.5rem);
+    @include m.webkit(align-items, center);
+    @include m.flex-gap-row(0.45rem);
+    @include m.webkit(flex-shrink, 0);
   }
 }
 
@@ -99,17 +141,99 @@ a {
   @include m.theme-border('border');
   border-radius: t.$radius-lg;
   box-shadow: t.$shadow;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1.5rem 1.5rem;
+  margin-bottom: 0.9rem;
+  padding: 1.2rem 1.35rem;
 }
 
 .card-title {
+  font-size: t.$font-base;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  @include m.theme-prop(color, 'text');
+  margin: 0;
+}
+
+.card > .card-title {
+  margin-bottom: 0.9rem;
+}
+
+.card-head {
+  @include m.flex;
+  @include m.webkit(align-items, center);
+  @include m.webkit(justify-content, space-between);
+  @include m.flex-gap-row(0.75rem);
+  margin-bottom: 0.9rem;
+}
+
+.card-heading {
+  @include m.inline-flex;
+  @include m.webkit(align-items, center);
+  @include m.flex-gap-row(0.55rem);
+  min-width: 0;
+}
+
+.step-badge {
+  @include m.inline-flex;
+  @include m.webkit(align-items, center);
+  @include m.webkit(justify-content, center);
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  @include m.theme-prop(background, 'surface-subtle');
+  @include m.theme-border('border');
+  @include m.theme-prop(color, 'text-muted');
   font-size: t.$font-xs;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  @include m.webkit(flex-shrink, 0);
+}
+
+.pill-badge {
+  font-size: t.$font-xs;
+  font-weight: 500;
   @include m.theme-prop(color, 'text-muted');
-  margin: 0 0 1.1rem;
+  @include m.theme-prop(background, 'surface-subtle');
+  @include m.theme-border('border');
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  line-height: 1.4;
+  white-space: nowrap;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.btn-header-pill {
+  @include m.inline-flex;
+  @include m.webkit(align-items, center);
+  @include m.webkit(justify-content, center);
+  @include m.flex-gap-row(0.4rem);
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  @include m.theme-border('border');
+  border-radius: t.$radius-sm;
+  @include m.theme-prop(background, 'surface');
+  @include m.theme-prop(color, 'text-muted');
+  font-size: t.$font-sm;
+  font-weight: 500;
+  line-height: 1;
+  @include m.webkit(flex-shrink, 0);
+  transition:
+    border-color t.$duration,
+    color t.$duration;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    display: block;
+  }
+
+  &:hover {
+    @include m.theme-prop(border-color, 'accent');
+    @include m.theme-prop(color, 'accent');
+  }
 }
 
 .btn-theme {
@@ -157,12 +281,31 @@ html.ereader {
     display: none;
   }
 
+  .page-header {
+    @include m.theme-prop(border-bottom-color, 'border', t.$ereader);
+
+    .brand-mark {
+      @include m.theme-prop(background, 'surface', t.$ereader);
+      @include m.theme-prop(border-color, 'border', t.$ereader);
+      @include m.theme-prop(color, 'accent', t.$ereader);
+    }
+
+    p {
+      @include m.theme-prop(color, 'text-muted', t.$ereader);
+    }
+  }
+
   .card {
     box-shadow: none;
     @include m.theme-prop(border-color, 'border', t.$ereader);
   }
 
   .instructions p {
+    @include m.theme-prop(color, 'text-muted', t.$ereader);
+  }
+
+  .page-footer {
+    @include m.theme-prop(border-top-color, 'border', t.$ereader);
     @include m.theme-prop(color, 'text-muted', t.$ereader);
   }
 
@@ -194,7 +337,7 @@ html.ereader {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .visually-hidden {
@@ -210,7 +353,7 @@ html.ereader {
 }
 
 .instructions {
-  margin-top: 1rem;
+  margin-top: 0.9rem;
 
   p {
     font-size: t.$font-base;
@@ -226,12 +369,86 @@ html.ereader {
 
 .page-footer {
   @include m.flex(column);
-  @include m.flex-gap-col(0.25rem);
+  @include m.flex-gap-col(0.3rem);
   text-align: center;
   @include m.theme-prop(color, 'text-muted');
   font-size: t.$font-sm;
-  margin-top: 2rem;
-  padding-top: 1.25rem;
+  margin-top: 1.75rem;
+  padding-top: 1.15rem;
   @include m.theme-border('border', 1px, solid, 'top');
-  line-height: 1.8;
+  line-height: 1.75;
+}
+
+@include m.breakpoint('sm') {
+  .wrapper {
+    padding: 1.25rem 0.9rem 2.75rem;
+  }
+
+  .page-header {
+    @include m.flex-gap-row(0.55rem);
+    margin-bottom: 1.1rem;
+    padding-bottom: 0.85rem;
+
+    .header-brand {
+      @include m.flex-gap-row(0.55rem);
+    }
+
+    .header-actions {
+      @include m.flex-gap-row(0.35rem);
+    }
+
+    .brand-mark {
+      width: 2.25rem;
+      height: 2.25rem;
+
+      svg {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+    }
+
+    h1 {
+      font-size: 1.08rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    p {
+      font-size: t.$font-xs;
+    }
+  }
+
+  .card {
+    padding: 1rem 1.05rem;
+  }
+
+  .btn-header-pill,
+  .btn-theme,
+  .btn-help {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .btn-header-pill {
+    padding: 0;
+
+    .btn-header-label {
+      display: none;
+    }
+  }
+}
+
+// Very narrow phones (e.g. 320px): drop the brand mark so the title and the
+// header buttons fit on one row without overlapping.
+@media (max-width: 380px) {
+  .page-header {
+    .brand-mark {
+      display: none;
+    }
+
+    .header-brand > * + * {
+      margin-left: 0;
+    }
+  }
 }

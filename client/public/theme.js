@@ -8,6 +8,12 @@ function initThemeToggle() {
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
     btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
     btn.setAttribute('title', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    if (!/(^|\s)ereader(\s|$)/.test(document.documentElement.className)) {
+      var metas = document.querySelectorAll('meta[name="theme-color"]');
+      for (var i = 0; i < metas.length; i++) {
+        metas[i].setAttribute('content', dark ? '#0f0e0d' : '#f5f4f0');
+      }
+    }
   }
 
   btn.addEventListener('click', function () {
