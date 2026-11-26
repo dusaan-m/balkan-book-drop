@@ -12,7 +12,8 @@
     <meta name="robots" content="index, follow" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#1c1917" />
+    <meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f0e0d" media="(prefers-color-scheme: dark)" />
     <meta name="max-file-size" content="MAX_FILE_SIZE_PLACEHOLDER" />
     <meta name="max-files-per-key" content="MAX_FILES_PER_KEY_PLACEHOLDER" />
     <meta name="balkandownload-enabled" content="BALKANDOWNLOAD_ENABLED_PLACEHOLDER" />
@@ -92,14 +93,32 @@
   <body>
     <main class="wrapper">
       <header class="page-header">
-        <h1>Balkan BookDrop</h1>
-        <p>Send ebooks to your Kobo, Kindle, or Tolino</p>
+        <div class="header-brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+          </div>
+          <div class="header-brand-text">
+            <h1>Balkan BookDrop</h1>
+            <p>Send ebooks to your Kobo, Kindle, or Tolino</p>
+          </div>
+        </div>
         <div class="header-actions">
           <button
             id="bd-open-header"
-            class="btn-help hidden"
+            class="btn-header-pill hidden"
             type="button"
-            aria-label="Search BalkanDownload e-books"
+            aria-label="Catalog — Search BalkanDownload e-books"
             title="Search BalkanDownload e-books"
             aria-haspopup="dialog"
             aria-controls="bd-dialog"
@@ -117,6 +136,7 @@
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
+            <span class="btn-header-label">Catalog</span>
           </button>
           <button
             id="howto-toggle"
@@ -145,6 +165,7 @@
           <button
             id="theme-toggle"
             class="btn-theme"
+            type="button"
             aria-label="Switch to dark mode"
             title="Switch to dark mode"
           >
@@ -176,34 +197,113 @@
         </div>
       </header>
 
+      <section
+        id="bd-launcher-card"
+        class="card bd-launcher hidden"
+        aria-labelledby="bd-launcher-title"
+      >
+        <div class="bd-launcher-head">
+          <div class="card-heading">
+            <span class="bd-launcher-icon" aria-hidden="true">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <h2 id="bd-launcher-title" class="card-title">Search BalkanDownload</h2>
+          </div>
+          <span id="bd-launcher-badge" class="pill-badge bd-launcher-badge"></span>
+        </div>
+        <form id="bd-launcher-form" class="bd-launcher-form" role="search">
+          <label for="bd-launcher-input" class="visually-hidden"
+            >Search BalkanDownload e-books</label
+          >
+          <input
+            id="bd-launcher-input"
+            type="search"
+            class="url-input bd-launcher-input"
+            placeholder="Search author or title…"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-secondary bd-launcher-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>Search</span>
+          </button>
+        </form>
+        <p class="hint">
+          Browse authors and individual book posts, then open the thread on BalkanDownload to thank
+          &amp; download.
+        </p>
+      </section>
+
       <form id="upload-form" novalidate>
         <div class="card">
-          <h2 class="card-title">Device key</h2>
-          <label for="keyinput" class="field-label">4-character key shown on your e-reader</label>
-          <input
-            id="keyinput"
-            name="key"
-            type="text"
-            class="key-input"
-            inputmode="text"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            maxlength="4"
-            pattern="[a-zA-Z0-9]{4}"
-            placeholder="––––"
-            required
-            aria-required="true"
-            aria-describedby="key-hint"
-          />
-          <p class="hint" id="key-hint">
-            Open this service in your e-reader's browser to see the key.
-          </p>
+          <div class="key-card-layout">
+            <div class="key-card-copy">
+              <div class="card-head">
+                <div class="card-heading">
+                  <span class="step-badge" aria-hidden="true">1</span>
+                  <h2 class="card-title">Device key</h2>
+                </div>
+              </div>
+              <label for="keyinput" class="field-label"
+                >4-character key shown on your e-reader</label
+              >
+              <p class="hint" id="key-hint">
+                Open this service in your e-reader's browser to see the key.
+              </p>
+              <p id="key-status" class="key-status hidden" aria-live="polite"></p>
+            </div>
+            <div class="key-card-control">
+              <input
+                id="keyinput"
+                name="key"
+                type="text"
+                class="key-input"
+                inputmode="text"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                maxlength="4"
+                pattern="[a-zA-Z0-9]{4}"
+                placeholder="––––"
+                required
+                aria-required="true"
+                aria-describedby="key-hint key-status"
+              />
+            </div>
+          </div>
         </div>
 
         <div class="card">
-          <h2 class="card-title">Ebook files</h2>
+          <div class="card-head">
+            <div class="card-heading">
+              <span class="step-badge" aria-hidden="true">2</span>
+              <h2 class="card-title">Ebook files or link</h2>
+            </div>
+          </div>
+
           <div id="drop-zone" class="zone">
             <button
               id="zone-pick"
@@ -212,19 +312,50 @@
               aria-describedby="zone-formats zone-limit"
             >
               <span id="zone-empty">
-                <span class="zone-icon" aria-hidden="true">📚</span>
+                <span class="zone-icon-wrap" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </span>
                 <span class="zone-label"><strong>Choose files</strong> or drag &amp; drop</span>
               </span>
               <span id="zone-selected" class="hidden">
-                <span class="zone-file-info">
-                  <span class="zone-file-name" id="zone-file-name"></span>
-                  <span class="zone-file-size" id="zone-file-size"></span>
+                <span class="zone-selected-row">
+                  <span class="zone-selected-icon" aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <polyline points="9 15 11 17 15 13" />
+                    </svg>
+                  </span>
+                  <span class="zone-file-info">
+                    <span class="zone-file-name" id="zone-file-name"></span>
+                    <span class="zone-file-size" id="zone-file-size"></span>
+                  </span>
                 </span>
                 <span class="visually-hidden">, choose different files</span>
               </span>
             </button>
             <p class="zone-formats" id="zone-formats">
-              EPUB · MOBI · AZW3 · PDF · TXT · CBZ · CBR · PNG · JPG · ZIP · RAR · 7Z · TAR
+              EPUB, MOBI, AZW3, PDF, TXT, CBZ, CBR, PNG, JPG, ZIP, RAR, 7Z, TAR
             </p>
             <p class="zone-formats" id="zone-limit">
               Up to MAX_FILE_SIZE_LABEL_PLACEHOLDER per file
@@ -240,6 +371,38 @@
             <p id="zone-announce" class="visually-hidden" aria-live="polite"></p>
           </div>
           <ul id="file-queue" class="file-queue hidden" aria-label="Selected files"></ul>
+
+          <div class="content-divider" aria-hidden="true"><span>or send a URL</span></div>
+
+          <div class="url-section">
+            <label for="urlinput" class="field-label">Web address</label>
+            <div class="url-input-wrap">
+              <span class="url-input-icon" aria-hidden="true">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </span>
+              <input
+                id="urlinput"
+                name="url"
+                type="url"
+                inputmode="url"
+                class="url-input"
+                placeholder="https://"
+                autocomplete="off"
+              />
+            </div>
+            <p class="hint">The link will appear on your e-reader's screen.</p>
+          </div>
         </div>
         <input
           id="file-input"
@@ -252,22 +415,13 @@
         />
 
         <div class="card">
-          <h2 class="card-title">Or send a URL</h2>
-          <label for="urlinput" class="field-label">Web address</label>
-          <input
-            id="urlinput"
-            name="url"
-            type="url"
-            inputmode="url"
-            class="url-input"
-            placeholder="https://"
-            autocomplete="off"
-          />
-          <p class="hint">The link will appear on your e-reader's screen.</p>
-        </div>
-
-        <div class="card">
-          <h2 class="card-title">Conversion options</h2>
+          <div class="card-head">
+            <div class="card-heading">
+              <span class="step-badge" aria-hidden="true">3</span>
+              <h2 class="card-title">Conversion options</h2>
+            </div>
+            <span id="options-active-count" class="pill-badge hidden" aria-live="polite"></span>
+          </div>
           <div
             id="options-grid"
             class="options-grid"
@@ -277,57 +431,46 @@
           <p id="options-note" class="hint hidden" aria-live="polite"></p>
         </div>
 
-        <button type="submit" id="submit-btn" class="btn-primary" disabled>Upload and send</button>
+        <div class="submit-area">
+          <button type="submit" id="submit-btn" class="btn-primary" disabled>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+            <span id="submit-btn-label">Upload and send</span>
+          </button>
 
-        <div
-          id="status-msg"
-          role="status"
-          aria-live="polite"
-          tabindex="-1"
-          class="status-msg hidden"
-        ></div>
-        <div
-          id="progress-wrap"
-          role="progressbar"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="0"
-          aria-label="Upload progress"
-          class="progress-wrap hidden"
-        >
-          <div id="progress-fill" class="progress-fill"></div>
+          <div
+            id="status-msg"
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+            class="status-msg hidden"
+          ></div>
+          <div
+            id="progress-wrap"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-label="Upload progress"
+            class="progress-wrap hidden"
+          >
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
         </div>
       </form>
 
-      <section
-        id="bd-launcher-card"
-        class="card bd-launcher hidden"
-        aria-labelledby="bd-launcher-title"
-      >
-        <div class="bd-launcher-head">
-          <h2 id="bd-launcher-title" class="card-title">Find books on BalkanDownload</h2>
-          <span id="bd-launcher-badge" class="bd-launcher-badge"></span>
-        </div>
-        <form id="bd-launcher-form" class="bd-launcher-form" role="search">
-          <label for="bd-launcher-input" class="visually-hidden"
-            >Search BalkanDownload e-books</label
-          >
-          <input
-            id="bd-launcher-input"
-            type="search"
-            class="url-input bd-launcher-input"
-            placeholder="Search author or title (Domaće &amp; Strane)…"
-            autocomplete="off"
-          />
-          <button type="submit" class="btn-secondary bd-launcher-btn">Search</button>
-        </form>
-        <p class="hint">
-          Browse authors and individual book posts, then open the thread on BalkanDownload to thank
-          &amp; download.
-        </p>
-      </section>
-
-      <details id="history" class="card hidden">
+      <details id="history" class="card history-card hidden">
         <summary class="history-summary">
           Recently sent<span class="history-chevron" aria-hidden="true"></span>
         </summary>
@@ -382,57 +525,71 @@
 
     <dialog id="howto-dialog" class="howto-dialog" aria-labelledby="howto-title">
       <form method="dialog" class="howto-form">
-        <button type="submit" class="howto-close" aria-label="Close">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-        <h2 id="howto-title" class="howto-title">How it works</h2>
-        <p>
-          Open Balkan BookDrop on your Kobo, Kindle, or Tolino — it will show a 4-character key and
-          a QR code. Scan the QR code with your phone to open this page with the key pre-filled, or
-          type the key manually. Pick one or more ebook files (or extract them from ZIP, RAR, 7Z, or
-          TAR archives) and press <em>Upload and send</em>. Download links appear on your e-reader
-          within seconds.
-        </p>
+        <div class="dialog-header">
+          <h2 id="howto-title" class="howto-title">How it works</h2>
+          <button type="submit" class="dialog-close howto-close" aria-label="Close">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <ol class="howto-steps">
+          <li>
+            <strong>Open on your e-reader:</strong> Open Balkan BookDrop on your Kobo, Kindle, or
+            Tolino to see a 4-character key and QR code.
+          </li>
+          <li>
+            <strong>Enter key &amp; pick books:</strong> Scan the QR code with your phone or type
+            the key, then drop ebook files (or extract from ZIP, RAR, 7Z, or TAR archives) and press
+            <em>Upload and send</em>.
+          </li>
+          <li>
+            <strong>Download immediately:</strong> Download links appear on your e-reader screen
+            within seconds.
+          </li>
+        </ol>
         <p>
           You can also search the BalkanDownload catalog directly from this page to find books.
           Files are stored temporarily on the server and deleted automatically a few minutes after
           you close the e-reader browser or generate a new key.
         </p>
-        <button type="submit" class="btn-primary howto-got-it">Got it</button>
+        <button type="submit" class="btn-primary howto-got-it" autofocus>Got it</button>
       </form>
     </dialog>
 
     <dialog id="zip-dialog" class="zip-dialog" aria-labelledby="zip-title">
       <div class="zip-dialog-panel">
-        <button id="zip-close" type="button" class="howto-close" aria-label="Close">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-        <h2 id="zip-title" class="zip-title">Choose files from archive</h2>
-        <p id="zip-subtitle" class="zip-subtitle"></p>
+        <div class="dialog-header">
+          <div class="dialog-header-copy">
+            <h2 id="zip-title" class="zip-title">Choose files from archive</h2>
+            <p id="zip-subtitle" class="zip-subtitle"></p>
+          </div>
+          <button id="zip-close" type="button" class="dialog-close" aria-label="Close">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
         <div class="zip-toolbar">
           <button id="zip-toggle-all" type="button" class="btn-secondary">Deselect all</button>
           <span id="zip-selection-summary" class="zip-selection-summary" aria-live="polite"></span>
@@ -456,24 +613,25 @@
 
     <dialog id="bd-dialog" class="bd-dialog" aria-labelledby="bd-title">
       <div class="bd-dialog-panel">
-        <button id="bd-close" type="button" class="howto-close" aria-label="Close">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-
         <header class="bd-dialog-header">
-          <h2 id="bd-title" class="bd-title">BalkanDownload E-Books</h2>
+          <div class="dialog-header">
+            <h2 id="bd-title" class="bd-title">BalkanDownload E-Books</h2>
+            <button id="bd-close" type="button" class="dialog-close" aria-label="Close">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
           <div class="bd-status-row">
             <span id="bd-status-text" class="bd-status-text" aria-live="polite"
               >Loading catalog status…</span
@@ -493,7 +651,7 @@
               id="bd-search-input"
               type="search"
               class="url-input bd-search-input"
-              placeholder="Search author or title (e.g. Mirko Kovac, Ludlum)…"
+              placeholder="Search author or title…"
               autocomplete="off"
               maxlength="100"
             />
@@ -565,7 +723,7 @@
               id="bd-book-filter"
               type="search"
               class="url-input bd-book-filter"
-              placeholder="Filter books or format in this thread (e.g. epub)…"
+              placeholder="Filter books or format (e.g. epub)…"
               autocomplete="off"
             />
           </div>

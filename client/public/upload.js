@@ -61,6 +61,8 @@ const isIOS =
 
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
+const keyInput = document.getElementById('keyinput');
+const keyStatus = document.getElementById('key-status');
 const zoneEmpty = document.getElementById('zone-empty');
 const zoneSelected = document.getElementById('zone-selected');
 const zonePick = document.getElementById('zone-pick');
@@ -70,6 +72,7 @@ const zoneFileSize = document.getElementById('zone-file-size');
 const zoneClearBtn = document.getElementById('zone-clear-btn');
 const fileQueue = document.getElementById('file-queue');
 const submitBtn = document.getElementById('submit-btn');
+const submitBtnLabel = document.getElementById('submit-btn-label');
 const historySection = document.getElementById('history');
 const historyList = document.getElementById('history-list');
 const toastContainer = document.getElementById('toast-container');
@@ -79,6 +82,7 @@ const progressWrap = document.getElementById('progress-wrap');
 const progressFill = document.getElementById('progress-fill');
 const pageUrlLink = document.getElementById('page-url');
 const optionsNote = document.getElementById('options-note');
+const optionsActiveCount = document.getElementById('options-active-count');
 const zipDialog = document.getElementById('zip-dialog');
 const zipCloseBtn = document.getElementById('zip-close');
 const zipSubtitle = document.getElementById('zip-subtitle');
@@ -110,7 +114,7 @@ const OPTIONS = [
     label: 'Kobo format',
     tag: 'Kobo · EPUB',
     description:
-      "Converts EPUB to Kobo's .kepub format — enables better typography, font control, and page turns. Only runs when sending an EPUB to a Kobo.",
+      "Converts EPUB to Kobo's .kepub format for better typography and page turns (Kobo only).",
     defaultChecked: false,
     enabledExtensions: ['.epub'],
   },
@@ -119,8 +123,7 @@ const OPTIONS = [
     name: 'kindlegen',
     label: 'Kindle format',
     tag: 'Kindle · EPUB',
-    description:
-      "Converts EPUB to MOBI so Kindle can open it — Kindle doesn't natively support EPUB. Only runs when sending an EPUB to a Kindle.",
+    description: 'Converts EPUB to MOBI format so Kindle devices can open it (Kindle only).',
     defaultChecked: false,
     enabledExtensions: ['.epub'],
   },
@@ -129,8 +132,7 @@ const OPTIONS = [
     name: 'pdfcropmargins',
     label: 'Crop PDF margins',
     tag: 'PDF only',
-    description:
-      'Trims white borders from PDF pages so text fills more of the small screen. Most useful for academic papers or scanned books with wide margins.',
+    description: 'Trims white page borders so PDF text fills more of your screen.',
     defaultChecked: false,
     enabledExtensions: ['.pdf'],
   },
@@ -139,8 +141,7 @@ const OPTIONS = [
     name: 'transliteration',
     label: 'Transliterate filename',
     tag: 'Any file',
-    description:
-      "Replaces accented and non-Latin characters in the filename with ASCII equivalents (e.g. Ü→U, é→e). Helps older devices that can't handle Unicode filenames.",
+    description: 'Replaces accented and non-Latin characters in filenames with ASCII (e.g. Ü→U).',
     defaultChecked: false,
   },
   {
@@ -148,8 +149,7 @@ const OPTIONS = [
     name: 'fetchmetadata',
     label: 'Update metadata',
     tag: 'EPUB only',
-    description:
-      "Looks up title, author, publisher, and description from Google Books and updates the EPUB's internal metadata. You'll see what changed on the download page.",
+    description: 'Updates title, author, publisher, and description via Google Books.',
     defaultChecked: false,
     enabledExtensions: ['.epub'],
   },
@@ -162,6 +162,23 @@ let detectedDevice = null;
 
 const MUTUALLY_EXCLUSIVE = ['kepubify', 'kindlegen'];
 const OPTIONS_STORAGE_KEY = 'bookdrop-options';
+
+function updateActiveOptionsCount() {
+  if (!optionsActiveCount) {
+    return;
+  }
+  const active = OPTIONS.filter(({ id }) => {
+    const el = document.getElementById(id);
+    return Boolean(el && !el.disabled && el.checked);
+  }).length;
+  if (active > 0) {
+    optionsActiveCount.textContent = `${active} active`;
+    optionsActiveCount.classList.remove('hidden');
+  } else {
+    optionsActiveCount.textContent = '';
+    optionsActiveCount.classList.add('hidden');
+  }
+}
 
 function buildOptionsGrid() {
   const optionsGrid = document.getElementById('options-grid');
@@ -204,6 +221,7 @@ function buildOptionsGrid() {
     lbl.append(input, wrapper);
     optionsGrid.appendChild(lbl);
   });
+  updateActiveOptionsCount();
 }
 
 function getExtension(name) {
@@ -223,6 +241,30 @@ function commonExtension(files) {
 }
 
 function updateOptionAvailability(files) {
+  if (files.length === 0) {
+    OPTIONS.forEach(({ id }) => {
+      const input = document.getElementById(id);
+      if (!input) {
+        return;
+      }
+      const wasDisabled = input.disabled;
+      input.disabled = false;
+      if (wasDisabled) {
+        input.checked = input.dataset.defaultChecked === 'true';
+      }
+      const label = input.closest('label');
+      if (label) {
+        label.classList.remove('option-disabled');
+      }
+    });
+    if (optionsNote) {
+      optionsNote.textContent = '';
+      optionsNote.classList.add('hidden');
+    }
+    updateActiveOptionsCount();
+    return;
+  }
+
   const ext = commonExtension(files);
 
   if (!ext) {
@@ -248,6 +290,7 @@ function updateOptionAvailability(files) {
           : '';
       optionsNote.classList.toggle('hidden', files.length <= 1);
     }
+    updateActiveOptionsCount();
     return;
   }
 
@@ -278,24 +321,32 @@ function updateOptionAvailability(files) {
       label.classList.toggle('option-disabled', !enabled);
     }
   });
+  updateActiveOptionsCount();
 }
 
 function wireMutualExclusion() {
   MUTUALLY_EXCLUSIVE.forEach((id) => {
     document.getElementById(id).addEventListener('change', (e) => {
+      e.target.dataset.defaultChecked = String(e.target.checked);
       if (e.target.checked) {
         MUTUALLY_EXCLUSIVE.forEach((otherId) => {
           if (otherId !== id) {
-            document.getElementById(otherId).checked = false;
+            const other = document.getElementById(otherId);
+            other.checked = false;
+            other.dataset.defaultChecked = 'false';
           }
         });
       }
+      updateActiveOptionsCount();
     });
   });
 }
 
 let selectedFiles = [];
 let currentUploadId = 0;
+// True while a submit is in flight, so input/device-lookup events can't
+// re-enable the button (or reset its "Sending…" label) mid-upload.
+let isSending = false;
 // Bumped by every selection change, so a slower pending file check can't overwrite a newer one.
 let handleFilesId = 0;
 
@@ -312,8 +363,38 @@ function formatLimit(bytes) {
     : `${Math.ceil(bytes / 1024)} KB`;
 }
 
+function setSubmitLabel(text) {
+  if (submitBtnLabel) {
+    submitBtnLabel.textContent = text;
+  } else {
+    submitBtn.textContent = text;
+  }
+}
+
 function updateSubmitState() {
-  submitBtn.disabled = selectedFiles.length === 0 && !urlInput.value.trim();
+  if (isSending) {
+    submitBtn.disabled = true;
+    setSubmitLabel('Sending\u2026');
+    return;
+  }
+  const count = selectedFiles.length;
+  const hasUrl = Boolean(urlInput.value.trim());
+  submitBtn.disabled = count === 0 && !hasUrl;
+
+  if (count === 0 && !hasUrl) {
+    setSubmitLabel('Upload and send');
+    return;
+  }
+  if (count === 0) {
+    setSubmitLabel(detectedDevice ? `Send link to ${detectedDevice}` : 'Send link');
+    return;
+  }
+  const filePart = count === 1 ? '1 file' : `${count} files`;
+  if (hasUrl) {
+    setSubmitLabel(`Send ${filePart} & link`);
+    return;
+  }
+  setSubmitLabel(detectedDevice ? `Send ${filePart} to ${detectedDevice}` : `Send ${filePart}`);
 }
 
 function setFiles(files) {
@@ -1309,7 +1390,8 @@ function buildFormData(key, urlVal, file) {
     formData.set('url', urlVal);
   }
   OPTIONS.forEach(({ id, name }) => {
-    if (document.getElementById(id).checked) {
+    const el = document.getElementById(id);
+    if (el && !el.disabled && el.checked) {
       formData.set(name, 'on');
     }
   });
@@ -1338,7 +1420,19 @@ async function uploadOneFile(key, urlVal, file, onProgress) {
 
 document.getElementById('upload-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (isSending) {
+    return;
+  }
+  isSending = true;
+  try {
+    await handleSubmit();
+  } finally {
+    isSending = false;
+    updateSubmitState();
+  }
+});
 
+async function handleSubmit() {
   const key = document.getElementById('keyinput').value.trim().toUpperCase();
   if (key.length !== 4) {
     showStatus('error', 'Please enter the 4-character key shown on your e-reader.');
@@ -1365,6 +1459,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
 
   const uploadId = ++currentUploadId;
   submitBtn.disabled = true;
+  setSubmitLabel('Sending\u2026');
 
   const filesToUpload = selectedFiles.slice(); // capture before any async gaps
   const successResults = [];
@@ -1379,7 +1474,6 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
       if (uploadId !== currentUploadId) {
         return;
       }
-      submitBtn.disabled = false;
       setProgress(0, false);
       showStatus('error', 'Could not reach the server. Is it running?');
       return;
@@ -1388,7 +1482,6 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
       return;
     }
     if (urlXhr.status < 200 || urlXhr.status >= 300) {
-      submitBtn.disabled = false;
       setProgress(0, false);
       showStatus('error', uploadErrorMessage(urlXhr, 'Failed to stage URL.'));
       return;
@@ -1406,7 +1499,6 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
       if (uploadId !== currentUploadId) {
         return;
       }
-      submitBtn.disabled = false;
       setProgress(0, false);
       showStatus('error', 'Could not reach the server. Is it running?');
       return;
@@ -1414,13 +1506,11 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
     if (uploadId !== currentUploadId) {
       return;
     }
-    submitBtn.disabled = false;
     setProgress(0, false);
     if (xhr.status >= 200 && xhr.status < 300) {
       hideStatus();
       showToast(formatSuccessMessages([readResult(xhr)]));
       urlInput.value = '';
-      updateSubmitState();
     } else {
       showStatus('error', uploadErrorMessage(xhr, 'Upload failed.'));
     }
@@ -1516,7 +1606,6 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   for (let j = stoppedAt; j < total; j++) {
     setFileQueueStatus(j, 'not sent', null);
   }
-  submitBtn.disabled = false;
   setProgress(0, false);
   if (failures.length > 0 && total > 1) {
     unlockFileQueue();
@@ -1542,7 +1631,6 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   if (urlVal) {
     urlInput.value = '';
   }
-  updateSubmitState();
   if (failures.length > 0) {
     showStatus('error', uploadFailureMessage(failures, unsent, total));
     const reportable = failures.find((f) => f.ref);
@@ -1552,7 +1640,7 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   } else {
     hideStatus();
   }
-});
+}
 
 async function checkPendingShare() {
   if (!('caches' in window)) {
@@ -1575,8 +1663,8 @@ function saveOptions() {
   const state = {};
   OPTIONS.forEach(({ id }) => {
     const el = document.getElementById(id);
-    if (el && !el.disabled) {
-      state[id] = el.checked;
+    if (el) {
+      state[id] = el.disabled ? el.dataset.defaultChecked === 'true' : el.checked;
     }
   });
   try {
@@ -1607,39 +1695,125 @@ function applyOptions(state) {
 
 function setOption(id, checked) {
   const el = document.getElementById(id);
-  if (el && el.checked !== checked) {
+  if (!el) {
+    return;
+  }
+  el.dataset.defaultChecked = String(checked);
+  if (checked && MUTUALLY_EXCLUSIVE.includes(id)) {
+    MUTUALLY_EXCLUSIVE.forEach((otherId) => {
+      if (otherId !== id) {
+        const other = document.getElementById(otherId);
+        if (other) {
+          other.dataset.defaultChecked = 'false';
+          other.checked = false;
+        }
+      }
+    });
+  }
+  if (el.disabled) {
+    saveOptions();
+    updateActiveOptionsCount();
+    return;
+  }
+  if (el.checked !== checked) {
     el.checked = checked;
     el.dispatchEvent(new Event('change'));
+  } else {
+    saveOptions();
+    updateActiveOptionsCount();
+  }
+}
+
+let deviceLookupId = 0;
+
+function setKeyStatus(state, text) {
+  if (keyInput) {
+    keyInput.classList.toggle('is-connected', state === 'connected');
+  }
+  if (!keyStatus) {
+    return;
+  }
+  if (state === 'hidden') {
+    keyStatus.textContent = '';
+    keyStatus.className = 'key-status hidden';
+  } else {
+    keyStatus.textContent = text;
+    keyStatus.className = `key-status is-${state}`;
   }
 }
 
 function lookupDevice(key) {
-  fetch(`/device/${key}`)
+  const lookupId = ++deviceLookupId;
+  fetch(`/device/${encodeURIComponent(key)}`)
     .then(function (r) {
       return r.ok ? r.json() : null;
     })
     .then(function (data) {
-      detectedDevice = data?.device ?? null;
-      if (!data) {
+      if (lookupId !== deviceLookupId) {
         return;
       }
-      if (data.device === 'Kindle') {
+      const device = data?.device && data.device !== 'unknown' ? data.device : null;
+      detectedDevice = device;
+      if (device) {
+        setKeyStatus('connected', `Connected \u00b7 ${device}`);
+      } else {
+        setKeyStatus('hidden', '');
+      }
+      if (device === 'Kindle') {
         setOption('kindlegen', true);
-      } else if (data.device === 'Kobo') {
+      } else if (device === 'Kobo') {
         setOption('kepubify', true);
-      } else if (data.device === 'Tolino') {
+      } else if (device === 'Tolino') {
         setOption('kepubify', false);
         setOption('kindlegen', false);
       }
+      updateSubmitState();
     })
-    .catch(function () {});
+    .catch(function () {
+      if (lookupId !== deviceLookupId) {
+        return;
+      }
+      setKeyStatus('hidden', '');
+    });
 }
 
-document.getElementById('keyinput').addEventListener('input', function (e) {
+keyInput.addEventListener('input', function (e) {
   const key = e.target.value.trim().toUpperCase();
   detectedDevice = null;
+  deviceLookupId++;
   if (key.length === 4) {
     lookupDevice(key);
+  } else {
+    setKeyStatus('hidden', '');
+    updateSubmitState();
+  }
+});
+
+keyInput.addEventListener('paste', function (e) {
+  const pasted = (e.clipboardData?.getData('text') || '').trim();
+  if (!pasted) {
+    return;
+  }
+  let extracted = '';
+  if (/^https?:\/\//i.test(pasted)) {
+    try {
+      const parsed = new URL(pasted);
+      const paramKey = parsed.searchParams.get('key');
+      if (paramKey) {
+        extracted = paramKey.trim().toUpperCase();
+      }
+    } catch {}
+  } else {
+    const withoutLabel = pasted.replace(/^key\s*:\s*/i, '');
+    const cleaned = withoutLabel.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (cleaned.length === 4) {
+      extracted = cleaned;
+    }
+  }
+  if (extracted && /^[A-Z0-9]{4}$/.test(extracted)) {
+    e.preventDefault();
+    keyInput.value = extracted;
+    keyInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 });
 
@@ -1654,9 +1828,16 @@ wireMutualExclusion();
   OPTIONS.forEach(({ id }) => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('change', saveOptions);
+      el.addEventListener('change', () => {
+        if (!el.disabled) {
+          el.dataset.defaultChecked = String(el.checked);
+        }
+        saveOptions();
+        updateActiveOptionsCount();
+      });
     }
   });
+  updateActiveOptionsCount();
 })();
 
 checkPendingShare();

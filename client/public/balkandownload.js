@@ -628,8 +628,8 @@
         searchInput.value = initialQuery.trim();
         showSearchStep();
         void runSearch();
-      } else if (!stepSearch.classList.contains('hidden')) {
-        searchInput.focus();
+      } else {
+        showSearchStep();
       }
 
       void fetchStatus().then((status) => {
@@ -668,6 +668,18 @@
 
     dialog.addEventListener('close', () => {
       stopPollingStatus();
+      if (searchTimer !== null) {
+        clearTimeout(searchTimer);
+        searchTimer = null;
+      }
+      if (searchAbort) {
+        searchAbort.abort();
+        searchAbort = null;
+      }
+      if (booksAbort) {
+        booksAbort.abort();
+        booksAbort = null;
+      }
     });
 
     syncBtn.addEventListener('click', () => {

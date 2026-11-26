@@ -5,7 +5,15 @@ function initHowto() {
     return;
   }
 
-  openBtn.addEventListener('click', () => dialog.showModal());
+  function openModal() {
+    dialog.showModal();
+    const form = dialog.querySelector('.howto-form');
+    if (form) {
+      form.scrollTop = 0;
+    }
+  }
+
+  openBtn.addEventListener('click', openModal);
 
   // Require both mousedown and mouseup on the backdrop, so a text-drag that ends outside
   // the content area doesn't close the dialog.
@@ -32,7 +40,7 @@ function initHowto() {
   } catch (_) {}
   const hasKeyParam = new URLSearchParams(location.search).has('key');
   if (!seen && !hasKeyParam) {
-    dialog.showModal();
+    openModal();
   }
 }
 
