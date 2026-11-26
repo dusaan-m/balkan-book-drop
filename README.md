@@ -137,33 +137,3 @@ docker compose up -d --build
 ```
 
 Because both containers use `restart: unless-stopped`, they also come back up automatically when Docker starts. Stop both anytime with `docker compose down`.
-
-## Heroku
-
-This project deploys to Heroku using the **Container Stack** (`heroku.yml` + `Dockerfile`), which bundles Node 26 and all ebook converter binaries (`kepubify`, `kindling-cli`, `kindlegen`, `pdfCropMargins`).
-
-### Deploy via Git (`heroku.yml`)
-
-```sh
-heroku create your-app-name
-heroku stack:set container -a your-app-name
-heroku config:set CONVERTER_TIMEOUT_MS=25000 KINDLING_MEMORY_LIMIT_BYTES=268435456 -a your-app-name
-git push heroku HEAD:main
-heroku ps:scale web=1 -a your-app-name
-```
-
-### Or deploy via Heroku Container Registry (builds locally)
-
-```sh
-heroku container:login
-heroku container:push web -a your-app-name
-heroku container:release web -a your-app-name
-```
-
-### Heroku notes
-
-- **Single dyno only:** Keep `web` scaled to `1` dyno (`heroku ps:scale web=1`). Active keys, SSE streams, and uploaded files are stored per-dyno.
-- **30-second router timeout:** Heroku's router drops requests that take longer than 30s to respond (`H12`). Setting `CONVERTER_TIMEOUT_MS=25000` lets slow conversions fail cleanly before the router times out.
-- **Memory limits:** `Eco`/`Basic`/`Standard-1X` dynos have 512 MB RAM; `KINDLING_MEMORY_LIMIT_BYTES=268435456` (256 MiB) helps avoid `R14`/`R15` memory errors, or use `Standard-2X` (1 GB) for large files and PDF cropping.
-- **Ephemeral disk:** Dyno restarts clear `uploads/` and `data/balkandownload.sqlite`. The BalkanDownload catalog re-syncs automatically in the background on startup (or disable it with `BALKANDOWNLOAD_ENABLED=0`).
-- **HTTPS:** Heroku terminates TLS at its router and sets `X-Forwarded-Proto: https`, which works with `trust proxy` and HSTS out of the box. Always open the app over `https://` (or set `DISABLE_HSTS=1` only if an older ereader requires plain HTTP).
