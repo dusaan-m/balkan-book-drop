@@ -27,6 +27,10 @@ services:
       - PORT
     volumes:
       - balkandownload-data:/usr/src/app/data
+    networks:
+      default:
+        aliases:
+          - book-drop
 
   cloudflared:
     image: cloudflare/cloudflared:latest
