@@ -138,7 +138,7 @@ describe('client/public/archive.js', () => {
 
     const entries = await BookDropArchive.listZipEntries(file);
     assert.deepStrictEqual(
-      entries.map((e) => ({ basename: e.basename, folder: e.folder })),
+      Array.from(entries, (e) => ({ basename: e.basename, folder: e.folder })),
       [
         { basename: 'Dune.epub', folder: 'Sci-Fi/Herbert' },
         { basename: 'notes.txt', folder: '' },

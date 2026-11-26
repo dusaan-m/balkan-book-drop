@@ -78,3 +78,38 @@ test('QR code updates when refresh button is clicked', async ({ page }) => {
   expect(secondSrc).toMatch(/^\/qr\/[2-9A-Z]{4}$/);
   expect(secondSrc).not.toBe(firstSrc);
 });
+
+test('stays in high-contrast light mode on e-reader even when dark theme is preferred or saved', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Linux; Kobo Touch 4.39) AppleWebKit/537.36',
+    colorScheme: 'dark',
+    baseURL: `http://localhost:${process.env.E2E_PORT ?? '3001'}`,
+  });
+  await context.addInitScript(() => localStorage.setItem('theme', 'dark'));
+  const page = await context.newPage();
+  await page.goto('/');
+
+  await expect(page.locator('html')).toHaveClass(/\bereader\b/);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  const colors = await page.evaluate(() => ({
+    bodyBg: getComputedStyle(document.body).backgroundColor,
+    titleColor: getComputedStyle(document.querySelector('h1')!).color,
+  }));
+  expect(colors.bodyBg).toBe('rgb(245, 244, 240)');
+  expect(colors.titleColor).toBe('rgb(0, 0, 0)');
+  await context.close();
+});
+
+test('collapses QR slot cleanly when key generation fails', async ({ page }) => {
+  await page.route('/generate', (route) =>
+    route.fulfill({ status: 429, contentType: 'text/plain', body: 'Too many active sessions' })
+  );
+  await page.goto('/');
+
+  await expect(page.locator('#error-msg')).toHaveText('Too many active sessions');
+  await expect(page.locator('#key-card')).toHaveClass(/\bis-no-qr\b/);
+  await expect(page.locator('#qr-figure')).toBeHidden();
+  await expect(page.locator('#status-row')).toBeHidden();
+});

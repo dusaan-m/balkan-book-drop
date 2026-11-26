@@ -1350,3 +1350,135 @@ test('extracts selected files from a .tar.gz archive via libarchive WASM worker'
   await page.locator('#submit-btn').click();
   await expect(page.locator('.toast')).toContainText('story.txt', { timeout: 10_000 });
 });
+
+test('shows connected badge, active option count, and dynamic submit labels', async ({ page }) => {
+  await page.route('/device/ABCD', (route) => route.fulfill({ json: { device: 'Kobo' } }));
+  await page.route('/upload', (route) => {
+    const isFile = (route.request().postData() ?? '').includes('name="file"');
+    return route.fulfill({
+      json: isFile
+        ? {
+            device: 'Kobo',
+            filename: 'a.epub',
+            conversionTool: 'Kepubify',
+            url: null,
+            metadataFailed: false,
+          }
+        : { url: 'https://example.com' },
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#submit-btn')).toBeDisabled();
+  await expect(page.locator('#submit-btn-label')).toHaveText('Upload and send');
+  await expect(page.locator('#key-status')).toBeHidden();
+  await expect(page.locator('#options-active-count')).toBeHidden();
+
+  await page.locator('#keyinput').fill('ABCD');
+  await expect(page.locator('#key-status')).toHaveText('Connected · Kobo');
+  await expect(page.locator('#keyinput')).toHaveClass(/\bis-connected\b/);
+  await expect(page.locator('#kepubify')).toBeChecked();
+  await expect(page.locator('#options-active-count')).toHaveText('1 active');
+
+  await page.locator('#urlinput').fill('https://example.com');
+  await expect(page.locator('#submit-btn')).toBeEnabled();
+  await expect(page.locator('#submit-btn-label')).toHaveText('Send link to Kobo');
+
+  await page.locator('#urlinput').fill('');
+  await page.locator('#file-input').setInputFiles({
+    name: 'book.epub',
+    mimeType: 'application/epub+zip',
+    buffer: fakeEpub('book'),
+  });
+  await expect(page.locator('#submit-btn-label')).toHaveText('Send 1 file to Kobo');
+
+  await page.locator('#file-input').setInputFiles({
+    name: 'note.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('hello'),
+  });
+  await expect(page.locator('#kepubify')).toBeDisabled();
+  await expect(page.locator('#kepubify')).not.toBeChecked();
+  await expect(page.locator('#options-active-count')).toBeHidden();
+
+  await page.locator('#file-input').setInputFiles([
+    { name: 'a.epub', mimeType: 'application/epub+zip', buffer: fakeEpub('a') },
+    { name: 'b.epub', mimeType: 'application/epub+zip', buffer: fakeEpub('b') },
+  ]);
+  await expect(page.locator('#kepubify')).toBeEnabled();
+  await expect(page.locator('#kepubify')).toBeChecked();
+  await expect(page.locator('#options-active-count')).toHaveText('1 active');
+
+  await page.locator('#urlinput').fill('https://example.com');
+  await expect(page.locator('#submit-btn-label')).toHaveText('Send 2 files & link');
+
+  await page.locator('#submit-btn').click();
+  await expect(page.locator('.toast')).toContainText('2 files sent to Kobo, URL added');
+  await expect(page.locator('#kepubify')).toBeChecked();
+  await expect(page.locator('#options-active-count')).toHaveText('1 active');
+});
+
+test('keeps kepubify disabled while non-EPUB is selected, then checks it for EPUB or clear', async ({
+  page,
+}) => {
+  await page.route('/device/KOBO', (route) => route.fulfill({ json: { device: 'Kobo' } }));
+
+  await page.goto('/');
+  await page.locator('#file-input').setInputFiles({
+    name: 'doc.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4'),
+  });
+  await expect(page.locator('#kepubify')).toBeDisabled();
+  await expect(page.locator('#kepubify')).not.toBeChecked();
+
+  await page.locator('#keyinput').fill('KOBO');
+  await expect(page.locator('#key-status')).toHaveText('Connected · Kobo');
+  await expect(page.locator('#kepubify')).toBeDisabled();
+  await expect(page.locator('#kepubify')).not.toBeChecked();
+
+  await page.locator('#file-input').setInputFiles({
+    name: 'book.epub',
+    mimeType: 'application/epub+zip',
+    buffer: fakeEpub('book'),
+  });
+  await expect(page.locator('#kepubify')).toBeEnabled();
+  await expect(page.locator('#kepubify')).toBeChecked();
+
+  await page.locator('#file-input').setInputFiles({
+    name: 'doc.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4'),
+  });
+  await expect(page.locator('#kepubify')).toBeDisabled();
+
+  await page.locator('#zone-clear-btn').click();
+  await expect(page.locator('#kepubify')).toBeEnabled();
+  await expect(page.locator('#kepubify')).toBeChecked();
+});
+
+test('extracts 4-character key when pasting a URL or labeled key into keyinput', async ({
+  page,
+}) => {
+  await page.route('/device/ABCD', (route) => route.fulfill({ json: { device: 'Kobo' } }));
+  await page.route('/device/WXYZ', (route) => route.fulfill({ json: { device: 'Kindle' } }));
+
+  await page.goto('/');
+  await page.locator('#keyinput').evaluate((el, text) => {
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, cancelable: true }));
+  }, 'http://localhost:3001/?key=abcd');
+
+  await expect(page.locator('#keyinput')).toHaveValue('ABCD');
+  await expect(page.locator('#key-status')).toHaveText('Connected · Kobo');
+
+  await page.locator('#keyinput').evaluate((el, text) => {
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, cancelable: true }));
+  }, 'Key: wxyz');
+
+  await expect(page.locator('#keyinput')).toHaveValue('WXYZ');
+  await expect(page.locator('#key-status')).toHaveText('Connected · Kindle');
+});

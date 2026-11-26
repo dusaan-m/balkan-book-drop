@@ -63,6 +63,79 @@ const uploadPageStates: [string, (page: Page) => Promise<void>][] = [
       await expect(page.locator('#zip-limit-warning')).toBeVisible();
     },
   ],
+  [
+    'with connected device key and active option badge',
+    async (page) => {
+      await page.route('/device/ABCD', (route) => route.fulfill({ json: { device: 'Kobo' } }));
+      await page.locator('#keyinput').fill('ABCD');
+      await expect(page.locator('#key-status')).toBeVisible();
+      await expect(page.locator('#options-active-count')).toBeVisible();
+    },
+  ],
+  [
+    'with how-it-works dialog open',
+    async (page) => {
+      await page.locator('#howto-toggle').click();
+      await expect(page.locator('#howto-dialog')).toBeVisible();
+    },
+  ],
+  [
+    'with BalkanDownload launcher and dialog open',
+    async (page) => {
+      await page.route('/', async (route) => {
+        const res = await route.fetch();
+        const html = (await res.text()).replace(
+          '<meta name="balkandownload-enabled" content="0" />',
+          '<meta name="balkandownload-enabled" content="1" />'
+        );
+        await route.fulfill({ response: res, body: html });
+      });
+      await page.route('/api/balkandownload/status', (route) =>
+        route.fulfill({
+          json: {
+            enabled: true,
+            syncing: false,
+            topicCount: 42,
+            lastSyncedAt: Date.now(),
+            lastError: null,
+            forums: [],
+          },
+        })
+      );
+      await page.route('/api/balkandownload/search?*', (route) =>
+        route.fulfill({
+          json: {
+            query: 'andric',
+            section: 'all',
+            total: 1,
+            topicCount: 42,
+            syncing: false,
+            lastSyncedAt: Date.now(),
+            lastError: null,
+            results: [
+              {
+                topicId: 101,
+                title: 'Ivo Andrić',
+                section: 'domace',
+                forumId: 35,
+                forumLabel: 'Domaće',
+                url: 'https://www.balkandownload.org/topic/101-ivo-andric/',
+              },
+            ],
+          },
+        })
+      );
+      await page.goto('/');
+      await expect(page.locator('#bd-launcher-card')).toBeVisible();
+      const launcherScan = await new AxeBuilder({ page }).analyze();
+      expect(launcherScan.violations).toEqual([]);
+
+      await page.locator('#bd-launcher-input').fill('andric');
+      await page.locator('#bd-launcher-form button[type="submit"]').click();
+      await expect(page.locator('#bd-dialog')).toBeVisible();
+      await expect(page.locator('#bd-topic-list .bd-topic-item')).toHaveCount(1);
+    },
+  ],
 ];
 
 test.describe('Upload page (desktop)', () => {
@@ -138,7 +211,7 @@ test.describe('Upload page (desktop)', () => {
   test('heading hierarchy: one h1 and h2 for each card section and dialog', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h2')).toHaveCount(6);
+    await expect(page.locator('h2')).toHaveCount(7);
   });
 });
 
@@ -155,4 +228,18 @@ test.describe('Download page (e-reader UA)', () => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveCount(1);
   });
+});
+
+test.describe('Download page (desktop /receive)', () => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`passes axe accessibility scan (${colorScheme})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.goto('/receive');
+      await expect(page.locator('#key-display')).not.toHaveText('\u2013\u2013\u2013\u2013', {
+        timeout: 5_000,
+      });
+      const results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations).toEqual([]);
+    });
+  }
 });
